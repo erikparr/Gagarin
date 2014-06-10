@@ -1,0 +1,9 @@
+s.boot
+Server.internal.boot
+n = NetAddr("192.168.2.2", 8000); // the url should be the one of computer of app 2 (or nil)
+o = OSCresponderNode(nil, '/1/toggle1', { |t, r, msg| msg.postln }).add;
+p = OSCresponderNode(nil, '/1/slider1', { |t, r, msg| msg.postln }).add;
+
+o = OSCFunc({ arg msg, time, addr, recvPort; [msg, time, addr, recvPort].postln; }, '/1/toggle1', n);
+o = OSCFunc({ arg msg, time, addr, recvPort; [msg, time, addr, recvPort].postln; }, '/1/slider1'); // create the OSCresponderNode
+o.free;    // remove the OSCresponderNode when you are done.
