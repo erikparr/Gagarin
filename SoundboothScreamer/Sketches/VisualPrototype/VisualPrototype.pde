@@ -1,12 +1,13 @@
-import processing.pdf.*;
+PFont font;
 
 void setup() {
-  size(1280, 1040, P2D, "TypeDemo.pdf");
-  textMode(SHAPE);
-  textSize(180);
+  size(1280, 1040, P2D);
+  font = loadFont("ArialMT-12.vlw");
+  textFont(font, 32);
+
 }
 
 void draw() {
   background(0);
-  text("ABC", 75, 350);
+  // text("ABC", 75, 350);
 }
