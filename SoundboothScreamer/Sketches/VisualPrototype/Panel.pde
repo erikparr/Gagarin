@@ -14,9 +14,9 @@ class Panel {
     noStroke();
     rect(0,0,w+51,h);
     textBox();
-    stroke(220);
+    fill(200,200,200);
     textSize(96);
-    text((int)map(sin(millis()*0.001),-1,1,450,550), 100, h/2);
+    text((int)VisualPrototype.tempFreq, 100, h/2);
 
     fill(100);
     noStroke();
@@ -36,7 +36,7 @@ class Panel {
     fill(65,70,80);
     noStroke();
     rect(px,py-70,wd,h/3);
-    fill(259,20,81);
+    fill(200,200,200);
     text("Countdown: "+ (int)VisualPrototype.this.timer/1000, px,py-(ht/2));
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
@@ -68,19 +68,20 @@ class Panel {
         line(x+(w/2), i, x+w, i);
       }
       if(i==height/2){
-      strokeWeight(10.0);
-      stroke(0);
-      line(x+(w/2), i, x+w, i);
-    }
+        strokeWeight(10.0);
+        stroke(0);
+        line(x+(w/2), i, x+w, i);
+      }
     }
 
   }
-
+  
   void stopwatch(int px, int py, int wd, int ht){
     float offset = (1.5*PI);
-    fill(259,20,81);
-    ellipse(px, py, wd, ht);
     fill(50,50,50);
+    ellipse(px, py, wd, ht);
+    fill(259,20,81);
+
     arc(px, py, wd, ht, 0+offset, map(VisualPrototype.this.timer, 0, 60000, 0+offset, (2*PI)+offset), PIE);
   }
 

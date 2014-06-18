@@ -28,8 +28,12 @@ PFont font;
 Panel panel = new Panel();
 Waveform wave = new Waveform();
 TargetWave tWave = new TargetWave();
+LoudnessMonitor loud = new LoudnessMonitor();
 int targetFreq = 500; // replace with
-public float timer;
+public static float tempFreq=0; // replace with real input from osc
+public static Minim minim;
+public static AudioInput in;
+public static float timer;
 int initTime;
 
 public boolean sketchFullScreen() {
@@ -41,9 +45,14 @@ public void setup() {
   font = createFont("GillSans", 48);
   textFont(font);
   textAlign(CENTER, CENTER);
+  minim = new Minim(this);
+  in = minim.getLineIn();
+
+  loud.init(width/8, height/3, 50, 50);
   panel.init(width/4, height);
-  wave.init(width/3, height/4);
+  wave.init(width/3, 0);
   tWave.init(width/3, height/2);
+
   initTime = millis()+60000; //60 seconds
 }
 
@@ -53,12 +62,100 @@ public void draw() {
 panel.update();
   wave.update();
   tWave.update();
+  loud.update();
   update();
 
 }
 
 public void update(){
   timer = initTime-millis();
+  tempFreq =map(sin(millis()*0.001f),-1,1,450,550);
+}
+class LoudnessMonitor {
+
+  AudioInput in;
+  float amp;
+  float avg;
+  float flashFreq =0;
+  String loudMsg="";
+  int wd, ht, px, py;
+  float[] avgAmp = new float[128]; // store the last 1024 amplitude values in an array, to get average
+float flashCol;
+
+  public void init(int x, int y, int width, int height){
+    in = VisualPrototype.in;
+    wd = width;
+    ht = height;
+    px = x;
+    py = y;
+  }
+
+  public void update(){
+    pushMatrix();
+
+    calcLoudness();
+    calcAverage();
+    translate(px,py);
+    textSize(42);
+    fill(0);
+    text(loudMsg, -wd*3,-ht*3);
+
+    noFill();
+    stroke(150);
+    amp = in.mix.level();
+    stroke(0);
+// fill(color(flashCol, flashCol,flashCol));
+fill(color(map(avg,0.001f,0.03f,50,255), 50,50));
+    if(flashCol==255)
+      flashCol =50;
+
+    ellipse(0, 0, min(wd+amp*1000,200), min(ht+amp*1000,200));
+    loudnessText();
+
+    popMatrix();
+  }
+
+  public void calcAverage(){
+    float sum=0;
+    avgAmp[avgAmp.length-1] = amp;
+
+    for(int i = 0; i<avgAmp.length-1; i++) {
+      avgAmp[i] = avgAmp[i+1];
+      sum = (sum+avgAmp[i]);
+    }
+
+    avg = sum/avgAmp.length;
+    flashFreq = flashFreq+ avg;
+    if(flashFreq>0.1f){
+      flashCol = 255;
+      flashFreq=0;
+    }
+
+  }
+  public void calcLoudness(){
+
+  }
+
+  public void loudnessText(){
+
+    if(avg>0.002f){
+      loudMsg = "so very quiet....";
+    }
+    if(avg>0.01f){
+      loudMsg = "not very loud....";
+    }
+    if(avg>0.02f){
+      loudMsg = "pretty loud....";
+    }
+    if(avg>0.03f){
+      loudMsg = "fucking loud!!!";
+    }
+    if(avg<0.002f){
+      loudMsg = "silencio...";
+
+    }
+
+  }
 }
 class Panel {
   int w,h;
@@ -76,9 +173,9 @@ class Panel {
     noStroke();
     rect(0,0,w+51,h);
     textBox();
-    stroke(220);
+fill(200,200,200);
     textSize(96);
-    text((int)map(sin(millis()*0.001f),-1,1,450,550), 100, h/2);
+    text((int)VisualPrototype.tempFreq, 100, h/2);
 
     fill(100);
     noStroke();
@@ -98,7 +195,7 @@ class Panel {
     fill(65,70,80);
     noStroke();
     rect(px,py-70,wd,h/3);
-    fill(259,20,81);
+fill(200,200,200);
     text("Countdown: "+ (int)VisualPrototype.this.timer/1000, px,py-(ht/2));
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
@@ -140,9 +237,10 @@ class Panel {
 
   public void stopwatch(int px, int py, int wd, int ht){
     float offset = (1.5f*PI);
-    fill(259,20,81);
+fill(50,50,50);
     ellipse(px, py, wd, ht);
-    fill(50,50,50);
+    fill(259,20,81);
+
     arc(px, py, wd, ht, 0+offset, map(VisualPrototype.this.timer, 0, 60000, 0+offset, (2*PI)+offset), PIE);
   }
 
@@ -168,7 +266,7 @@ class TargetWave {
     updateSinewave();
     // draw the waveforms so we can see what we are monitoring
     strokeWeight(2.5f);  // Thicker
-    for(int i = 0; i < wavetable.length - 1; i++)
+    for(int i = 0; i <   wavetable.length - 1; i++)
     {
       line( px+i, py+wavetable[i]*yScaler*0.42f, px+i+step, py+wavetable[i]*yScaler*0.42f );
     }
@@ -191,42 +289,38 @@ class TargetWave {
 
   }
 }
-class Waveform {
+ class Waveform {
 
-  Minim minim;
-  AudioInput in;
-  int px, py;
-  int step = 3; // num pixels spaced between each sample drawn
-  float bufScaler = 0.666f; // scale the audioBuffer drawn for smaller waveform
-  int yScaler = 66; // scale the height of the waves being drawn
+   Minim minim;
+   AudioInput in;
+   float px, py;
+   int step = 3; // num pixels spaced between each sample drawn
+   float bufScaler = 0.666f; // scale the audioBuffer drawn for smaller waveform
+   int yScaler = 66; // scale the height of the waves being drawn
 
-  public void init(int x, int y)
-  {
-    px = x;
-    py = y;
-    minim = new Minim(this);
+   public void init(float x, float y)
+   {
+     px = x;
+     py = y;
+ minim = VisualPrototype.minim;
+ in = VisualPrototype.in;
+   }
 
-    // use the getLineIn method of the Minim object to get an AudioInput
-    in = minim.getLineIn();
-  }
+   public void update()
+   {
+     // stroke(0, 255,208);
+     py = map(tempFreq,450,550,height-height/3,height/3);
+     stroke(21, 166, 223);
+     // draw the waveforms so we can see what we are monitoring
+     strokeWeight(2.5f);  // Thicker
+     for(int i = 0; i < (in.bufferSize()*0.88f) - 1; i++)
+     {
+       line( px+i, py+in.left.get(i)*yScaler, px+i+step, py+in.left.get(i+step)*yScaler );
+     }
 
-  public void update()
-  {
-    stroke(0);
-    fill(0);
-    ellipse(width/8, height/3, 100+((float)in.mix.level())*1000, 100+((float)in.mix.level())*1000);
-    // stroke(0, 255,208);
-    stroke(21, 166, 223);
-    // draw the waveforms so we can see what we are monitoring
-    strokeWeight(2.5f);  // Thicker
-    for(int i = 0; i < (in.bufferSize()*0.88f) - 1; i++)
-    {
-      line( px+i, py+in.left.get(i)*yScaler, px+i+step, py+in.left.get(i+step)*yScaler );
-    }
+   }
 
-  }
-
-}
+ }
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "VisualPrototype" };
     if (passedArgs != null) {
