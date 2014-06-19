@@ -19,19 +19,29 @@ class LoudnessMonitor {
 
   void update(){
     pushMatrix();
+// stroke(0);
+// fill(65*0.6,70*0.6,80*0.6);
+// rect(0,0,mouseX,mouseY,7);
 
     calcLoudness();
     calcAverage();
     translate(px,py);
     textSize(42);
-    fill(0);
+    fill(200);
     text(loudMsg, -wd*3,-ht*3);
 
     noFill();
     stroke(150);
     amp = in.mix.level();
-    stroke(0);
-    // fill(color(flashCol, flashCol,flashCol));
+// fill(color(flashCol, flashCol,flashCol));
+fill(65*0.8,70*0.8,80*0.8);
+
+noStroke();
+fill(50,150,50,50);
+ellipse(0,0,100,100);
+fill(150,50,50,50);
+ellipse(0,0,200,200);
+stroke(0);
     fill(color(map(avg,0.001,0.03,50,255), 50,50));
     if(flashCol==255)
     flashCol =50;

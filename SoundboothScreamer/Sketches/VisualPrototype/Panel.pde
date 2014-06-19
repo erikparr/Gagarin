@@ -10,9 +10,11 @@ class Panel {
   }
 
   void update(){
-    fill(100);
+
+fill(65,70,80);
     noStroke();
-    rect(0,0,w+51,h);
+rect(0,0,w+51,h);
+
     textBox();
     fill(200,200,200);
     textSize(96);
@@ -20,10 +22,13 @@ class Panel {
 
     fill(100);
     noStroke();
-    rect(w,0,50,h);
+    rect(w,0,50,h); // sidebar
+
     setGradient(w,0+150,50,h/2-150,color(100),color(210,20,20));
     setGradient(w,h/2,50,h/2-150,color(210,20,20),color(100));
-
+    stroke(200);
+    strokeWeight(1);
+    line(w+115,0,w+115,height);
   }
 
   void textBox(){
@@ -33,9 +38,13 @@ class Panel {
     int ht = 70;
     textSize(52);
 
-    fill(65,70,80);
+    fill(65*0.8,70*0.8,80*0.8);
     noStroke();
     rect(px,py-70,wd,h/3);
+    noFill();
+    stroke(0);
+rect(px,py-70,wd,h/3,7);
+
     fill(200,200,200);
     text("Countdown: "+ (int)VisualPrototype.this.timer/1000, px,py-(ht/2));
     // text(mouseX +" "+mouseY,20,20);
@@ -75,7 +84,7 @@ class Panel {
     }
 
   }
-  
+
   void stopwatch(int px, int py, int wd, int ht){
     float offset = (1.5*PI);
     fill(50,50,50);

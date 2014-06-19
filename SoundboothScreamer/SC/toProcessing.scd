@@ -25,7 +25,7 @@ SynthDef("pitchFollow1",{
 	var in, amp, freq, hasFreq, out;
 	in = Mix.new(SoundIn.ar(0));
 	// amp = Amplitude.kr(in, 0.05, 0.05);
-	# freq, hasFreq = Tartini.kr(in, ampThreshold: 0.2, median: 7);
+	# freq, hasFreq = Tartini.kr(in,0.2);
 	SendTrig.kr(Impulse.kr(10),0,freq);
 	// Out.ar(0,(SinOsc.ar(MouseY.kr(560,567.5)) * MouseX.kr(0.0,10)));
 }).load(s);
