@@ -18,6 +18,17 @@ public static Minim minim;
 public static AudioInput in;
 public static float timer;
 public static float targetFreq = 250;
+public color EmRed =  color(254,0,12);
+public color EmBlue =  color(12,71,157);
+public color EmGrey =  color(90,90,90);
+public color EmSilver =  color(181,181,181);
+public color EmYellow =  color(255,215,0);
+public color EmBurgundy =  color(166,25,46);
+public color EmRuby =  color(215,56,114);
+public color EmAmber =  color(242,172,51);
+public color EmVermilion =  color(240,88,34);
+public color EmGrad1 =  color(232,29,48);
+public color EmGrad2 =  color(0,102,175);
 int initTime;
 
 boolean sketchFullScreen() {

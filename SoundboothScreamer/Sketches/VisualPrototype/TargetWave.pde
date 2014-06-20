@@ -20,7 +20,7 @@ int tCount=0;
   void update(){
 
     // stroke(255, 235, 22);
-    stroke(210,20,20);
+    stroke(EmRed);
     updateSinewave();
     updateTimer();
     // draw the waveforms so we can see what we are monitoring
@@ -34,7 +34,7 @@ int tCount=0;
     strokeWeight(0.5);
     stroke(180);
     rect(px,py-65,width-width/3,height/7,7);
-    fill(255,249,86,100);
+    fill(EmSilver);
     stroke(0,0,0,0);
     rect(px,py-65,map(tCount,0,5000,0,width-width/3),height/7,7);
 

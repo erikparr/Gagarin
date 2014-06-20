@@ -39,6 +39,17 @@ public static Minim minim;
 public static AudioInput in;
 public static float timer;
 public static float targetFreq = 250;
+public int EmRed =  color(254,0,12);
+public int EmBlue =  color(12,71,157);
+public int EmGrey =  color(90,90,90);
+public int EmSilver =  color(181,181,181);
+public int EmYellow =  color(255,215,0);
+public int EmBurgundy =  color(166,25,46);
+public int EmRuby =  color(215,56,114);
+public int EmAmber =  color(242,172,51);
+public int EmVermilion =  color(240,88,34);
+public int EmGrad1 =  color(232,29,48);
+public int EmGrad2 =  color(0,102,175);
 int initTime;
 
 public boolean sketchFullScreen() {
@@ -107,11 +118,10 @@ class LoudnessMonitor {
 
   public void update(){
     pushMatrix();
-// stroke(0);
-// fill(65*0.6,70*0.6,80*0.6);
-// rect(0,0,mouseX,mouseY,7);
+    // stroke(0);
+    // fill(65*0.6,70*0.6,80*0.6);
+    // rect(0,0,mouseX,mouseY,7);
 
-    calcLoudness();
     calcAverage();
     translate(px,py);
     textSize(42);
@@ -121,20 +131,15 @@ class LoudnessMonitor {
     noFill();
     stroke(150);
     amp = in.mix.level();
-// fill(color(flashCol, flashCol,flashCol));
-fill(65*0.8f,70*0.8f,80*0.8f);
+    noStroke();
 
-noStroke();
-fill(50,150,50,50);
-ellipse(0,0,100,100);
-fill(150,50,50,50);
-ellipse(0,0,200,200);
-stroke(0);
-    fill(color(map(avg,0.001f,0.03f,50,255), 50,50));
-    if(flashCol==255)
-    flashCol =50;
+    drawGradient(0,0,(int)min(wd+amp*1000,200),EmGrad1,EmGrad2);
+    // fill(color(map(avg,0.001,0.03,50,255), 50,50));
+    // if(flashCol==255)
+    // flashCol =50;
 
-    ellipse(0, 0, min(wd+amp*1000,200), min(ht+amp*1000,200));
+    // ellipse(0, 0, min(wd+amp*1000,200), min(ht+amp*1000,200));
+    stroke(0);
     loudnessText();
 
     popMatrix();
@@ -157,8 +162,25 @@ stroke(0);
     }
 
   }
-  public void calcLoudness(){
 
+  public void drawGradient(float x, float y, int rad, int c1, int c2) {
+    float maxRad = 200;
+    float r1 = red(c1);
+    float g1 = green(c1);
+    float b1 = blue(c1);
+    float r2 = red(c2);
+    float g2 = green(c2);
+    float b2 = blue(c2);
+    println(r1+" "+g1+" "+b1);
+    println(r2+" "+g2+" "+b2);
+    println("-");
+
+    for (int r = rad; r > 0; --r) {
+      println(map(r,maxRad,0,r1,r2)+" "+map(r,maxRad,0,g1,g2)+" "+map(r,maxRad,0,b1,b2));
+
+      fill(map(r,maxRad,0,r1,r2), map(r,maxRad,0,g1,g2), map(r,maxRad,0,b1,b2));
+      ellipse(x, y, r, r);
+    }
   }
 
   public void loudnessText(){
@@ -195,7 +217,7 @@ class Panel {
 
   public void update(){
 
-fill(65,70,80);
+fill(EmGrey);
     noStroke();
 rect(0,0,w+51,h);
 
@@ -204,12 +226,12 @@ rect(0,0,w+51,h);
     textSize(96);
     text((int)VisualPrototype.tempFreq, 100, h/2);
 
-    fill(100);
+    fill(EmGrey);
     noStroke();
     rect(w,0,50,h); // sidebar
 
-    setGradient(w,0+150,50,h/2-150,color(100),color(210,20,20));
-    setGradient(w,h/2,50,h/2-150,color(210,20,20),color(100));
+    setGradient(w,0+150,50,h/2-150,EmGrey,EmRed);
+    setGradient(w,h/2,50,h/2-150,EmRed,EmGrey);
     stroke(200);
     strokeWeight(1);
     line(w+115,0,w+115,height);
@@ -230,7 +252,7 @@ rect(0,0,w+51,h);
 rect(px,py-70,wd,h/3,7);
 
     fill(200,200,200);
-    text("Countdown: "+ (int)VisualPrototype.this.timer/1000, px,py-(ht/2));
+    text("Countdown: "+ (int)timer/1000, px,py-(ht/2));
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
     stopwatch(wd/2, h-(h/5), 225,225);
@@ -273,7 +295,7 @@ rect(px,py-70,wd,h/3,7);
     float offset = (1.5f*PI);
     fill(50,50,50);
     ellipse(px, py, wd, ht);
-    fill(259,20,81);
+    fill(EmBlue);
 
     arc(px, py, wd, ht, 0+offset, map(VisualPrototype.this.timer, 0, 60000, 0+offset, (2*PI)+offset), PIE);
   }
@@ -301,7 +323,7 @@ int tCount=0;
   public void update(){
 
     // stroke(255, 235, 22);
-    stroke(210,20,20);
+    stroke(EmRed);
     updateSinewave();
     updateTimer();
     // draw the waveforms so we can see what we are monitoring
@@ -315,7 +337,7 @@ int tCount=0;
     strokeWeight(0.5f);
     stroke(180);
     rect(px,py-65,width-width/3,height/7,7);
-    fill(255,249,86,100);
+    fill(EmSilver);
     stroke(0,0,0,0);
     rect(px,py-65,map(tCount,0,5000,0,width-width/3),height/7,7);
 
@@ -377,7 +399,7 @@ int tCount=0;
    {
      // stroke(0, 255,208);
      py = max(map(tempFreq,0,600,height-height/3,height/3), height/3);
-     stroke(21, 166, 223);
+     stroke(EmBlue);
      // draw the waveforms so we can see what we are monitoring
      strokeWeight(2.5f);  // Thicker
      for(int i = 0; i < (in.bufferSize()*0.88f) - 1; i++)

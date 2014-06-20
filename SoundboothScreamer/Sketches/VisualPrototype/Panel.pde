@@ -11,7 +11,7 @@ class Panel {
 
   void update(){
 
-fill(65,70,80);
+fill(EmGrey);
     noStroke();
 rect(0,0,w+51,h);
 
@@ -20,12 +20,12 @@ rect(0,0,w+51,h);
     textSize(96);
     text((int)VisualPrototype.tempFreq, 100, h/2);
 
-    fill(100);
+    fill(EmGrey);
     noStroke();
     rect(w,0,50,h); // sidebar
 
-    setGradient(w,0+150,50,h/2-150,color(100),color(210,20,20));
-    setGradient(w,h/2,50,h/2-150,color(210,20,20),color(100));
+    setGradient(w,0+150,50,h/2-150,EmGrey,EmRed);
+    setGradient(w,h/2,50,h/2-150,EmRed,EmGrey);
     stroke(200);
     strokeWeight(1);
     line(w+115,0,w+115,height);
@@ -46,7 +46,7 @@ rect(0,0,w+51,h);
 rect(px,py-70,wd,h/3,7);
 
     fill(200,200,200);
-    text("Countdown: "+ (int)VisualPrototype.this.timer/1000, px,py-(ht/2));
+    text("Countdown: "+ (int)timer/1000, px,py-(ht/2));
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
     stopwatch(wd/2, h-(h/5), 225,225);
@@ -89,7 +89,7 @@ rect(px,py-70,wd,h/3,7);
     float offset = (1.5*PI);
     fill(50,50,50);
     ellipse(px, py, wd, ht);
-    fill(259,20,81);
+    fill(EmBlue);
 
     arc(px, py, wd, ht, 0+offset, map(VisualPrototype.this.timer, 0, 60000, 0+offset, (2*PI)+offset), PIE);
   }

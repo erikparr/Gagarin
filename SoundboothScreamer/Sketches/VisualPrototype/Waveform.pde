@@ -19,7 +19,7 @@
    {
      // stroke(0, 255,208);
      py = max(map(tempFreq,0,600,height-height/3,height/3), height/3);
-     stroke(21, 166, 223);
+     stroke(EmBlue);
      // draw the waveforms so we can see what we are monitoring
      strokeWeight(2.5);  // Thicker
      for(int i = 0; i < (in.bufferSize()*0.88) - 1; i++)
