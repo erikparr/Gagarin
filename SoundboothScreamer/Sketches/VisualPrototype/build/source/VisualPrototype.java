@@ -30,6 +30,8 @@ integrate with osc input from SC app:
 
 OscP5 oscP5;
 PFont font;
+IntroScreen intro = new IntroScreen();
+OutroScreen outro = new OutroScreen();
 Panel panel = new Panel();
 Waveform wave = new Waveform();
 TargetWave tWave = new TargetWave();
@@ -48,10 +50,10 @@ public int EmBurgundy =  color(166,25,46);
 public int EmRuby =  color(215,56,114);
 public int EmAmber =  color(242,172,51);
 public int EmVermilion =  color(240,88,34);
+public int EmIndigo =  color(0,47,108);
 public int EmGrad1 =  color(232,29,48);
 public int EmGrad2 =  color(0,102,175);
 int initTime;
-
 public boolean sketchFullScreen() {
   return true;
 }
@@ -59,13 +61,15 @@ public boolean sketchFullScreen() {
 public void setup() {
   size(1440, 1040, P2D);
   font = createFont("GillSans", 48);
+intro.init();
+outro.init();
   textFont(font);
   textAlign(CENTER, CENTER);
   minim = new Minim(this);
   in = minim.getLineIn();
 
-/* start oscP5, listening for incoming messages at port 47110 */
-oscP5 = new OscP5(this,47110);
+  /* start oscP5, listening for incoming messages at port 47110 */
+  oscP5 = new OscP5(this,47110);
 
   loud.init(width/8, height/3, 50, 50);
   panel.init(width/4, height);
@@ -78,24 +82,59 @@ oscP5 = new OscP5(this,47110);
 public void draw() {
 
   background(0);
+
   panel.update();
   wave.update();
   tWave.update();
   loud.update();
+  if(intro.isActive())
+  intro.update();
+  if(timer<0)
+  outro.update();
   update();
 
 }
 
 public void update(){
+  if(!intro.isActive())
   timer = initTime-millis();
+
   // tempFreq =map(sin(millis()*0.001),-1,1,450,550);
 }
 
 public void oscEvent(OscMessage theOscMessage) {
   /* print the address pattern and the typetag of the received OscMessage */
-// println(theOscMessage.get(1).floatValue());
-tempFreq = theOscMessage.get(1).floatValue();
-// waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
+  // println(theOscMessage.get(1).floatValue());
+  tempFreq = theOscMessage.get(1).floatValue();
+  // waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
+}
+class IntroScreen{
+int timeCount;
+int introTimer;
+
+public void init(){
+timeCount = second()+10;
+}
+
+public void update(){
+  background(0);
+  introTimer = timeCount-second();
+  textSize(96);
+text(introTimer, width/2, height/2);
+
+}
+
+public boolean isActive(){
+  if(introTimer>=0)
+  return true;
+  else
+  return false;
+}
+
+//return intro duration in seconds
+public int getIntroDuration(){
+  return introTimer;
+}
 }
 class LoudnessMonitor {
 
@@ -186,23 +225,37 @@ class LoudnessMonitor {
   public void loudnessText(){
 
     if(avg>0.002f){
-      loudMsg = "so very quiet....";
+      loudMsg = "Very Quiet...";
     }
     if(avg>0.01f){
-      loudMsg = "not very loud....";
+      loudMsg = "Sing louder ...";
     }
     if(avg>0.02f){
-      loudMsg = "pretty loud....";
+      loudMsg = "Keep going!";
     }
     if(avg>0.03f){
-      loudMsg = "fucking loud!!!";
+      loudMsg = "That's LOUD!!!";
     }
     if(avg<0.002f){
-      loudMsg = "silencio...";
+      loudMsg = "Start singing...";
 
     }
 
   }
+}
+class OutroScreen{
+
+public void init(){
+
+}
+
+public void update(){
+  background(200);
+  textSize(96);
+  text("HIGH SCORE??", width/2, height/2);
+
+}
+
 }
 class Panel {
   int w,h;
@@ -217,21 +270,21 @@ class Panel {
 
   public void update(){
 
-fill(EmGrey);
+    fill(0);
     noStroke();
-rect(0,0,w+51,h);
+    rect(0,0,w+51,h);
 
     textBox();
     fill(200,200,200);
     textSize(96);
     text((int)VisualPrototype.tempFreq, 100, h/2);
 
-    fill(EmGrey);
+    fill(EmSilver);
     noStroke();
-    rect(w,0,50,h); // sidebar
+    rect(w+15,0,100,h); // sidebar
 
-    setGradient(w,0+150,50,h/2-150,EmGrey,EmRed);
-    setGradient(w,h/2,50,h/2-150,EmRed,EmGrey);
+    setGradient(w+15,0+150,100,h/2-150,EmSilver,EmRed);
+    setGradient(w+15,h/2,100,h/2-150,EmRed,EmSilver);
     stroke(200);
     strokeWeight(1);
     line(w+115,0,w+115,height);
@@ -244,14 +297,14 @@ rect(0,0,w+51,h);
     int ht = 70;
     textSize(52);
 
-    fill(65*0.8f,70*0.8f,80*0.8f);
+    fill(EmGrey);
     noStroke();
     rect(px,py-70,wd,h/3);
     noFill();
     stroke(0);
-rect(px,py-70,wd,h/3,7);
+    rect(px,py-70,wd,h/3,7);
 
-    fill(200,200,200);
+    fill(EmRed);
     text("Countdown: "+ (int)timer/1000, px,py-(ht/2));
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);

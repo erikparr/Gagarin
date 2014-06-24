@@ -87,19 +87,19 @@ class LoudnessMonitor {
   void loudnessText(){
 
     if(avg>0.002){
-      loudMsg = "so very quiet....";
+      loudMsg = "Very Quiet...";
     }
     if(avg>0.01){
-      loudMsg = "not very loud....";
+      loudMsg = "Sing louder ...";
     }
     if(avg>0.02){
-      loudMsg = "pretty loud....";
+      loudMsg = "Keep going!";
     }
     if(avg>0.03){
-      loudMsg = "fucking loud!!!";
+      loudMsg = "That's LOUD!!!";
     }
     if(avg<0.002){
-      loudMsg = "silencio...";
+      loudMsg = "Start singing...";
 
     }
 

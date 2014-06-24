@@ -11,21 +11,21 @@ class Panel {
 
   void update(){
 
-fill(EmGrey);
+    fill(0);
     noStroke();
-rect(0,0,w+51,h);
+    rect(0,0,w+51,h);
 
     textBox();
     fill(200,200,200);
     textSize(96);
     text((int)VisualPrototype.tempFreq, 100, h/2);
 
-    fill(EmGrey);
+    fill(EmSilver);
     noStroke();
-    rect(w,0,50,h); // sidebar
+    rect(w+15,0,100,h); // sidebar
 
-    setGradient(w,0+150,50,h/2-150,EmGrey,EmRed);
-    setGradient(w,h/2,50,h/2-150,EmRed,EmGrey);
+    setGradient(w+15,0+150,100,h/2-150,EmSilver,EmRed);
+    setGradient(w+15,h/2,100,h/2-150,EmRed,EmSilver);
     stroke(200);
     strokeWeight(1);
     line(w+115,0,w+115,height);
@@ -38,14 +38,14 @@ rect(0,0,w+51,h);
     int ht = 70;
     textSize(52);
 
-    fill(65*0.8,70*0.8,80*0.8);
+    fill(EmGrey);
     noStroke();
     rect(px,py-70,wd,h/3);
     noFill();
     stroke(0);
-rect(px,py-70,wd,h/3,7);
+    rect(px,py-70,wd,h/3,7);
 
-    fill(200,200,200);
+    fill(EmRed);
     text("Countdown: "+ (int)timer/1000, px,py-(ht/2));
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);

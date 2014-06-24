@@ -9,6 +9,8 @@ import netP5.*;
 
 OscP5 oscP5;
 PFont font;
+IntroScreen intro = new IntroScreen();
+OutroScreen outro = new OutroScreen();
 Panel panel = new Panel();
 Waveform wave = new Waveform();
 TargetWave tWave = new TargetWave();
@@ -27,10 +29,10 @@ public color EmBurgundy =  color(166,25,46);
 public color EmRuby =  color(215,56,114);
 public color EmAmber =  color(242,172,51);
 public color EmVermilion =  color(240,88,34);
+public color EmIndigo =  color(0,47,108);
 public color EmGrad1 =  color(232,29,48);
 public color EmGrad2 =  color(0,102,175);
 int initTime;
-
 boolean sketchFullScreen() {
   return true;
 }
@@ -38,13 +40,15 @@ boolean sketchFullScreen() {
 void setup() {
   size(1440, 1040, P2D);
   font = createFont("GillSans", 48);
+intro.init();
+outro.init();
   textFont(font);
   textAlign(CENTER, CENTER);
   minim = new Minim(this);
   in = minim.getLineIn();
 
-/* start oscP5, listening for incoming messages at port 47110 */
-oscP5 = new OscP5(this,47110);
+  /* start oscP5, listening for incoming messages at port 47110 */
+  oscP5 = new OscP5(this,47110);
 
   loud.init(width/8, height/3, 50, 50);
   panel.init(width/4, height);
@@ -57,22 +61,29 @@ oscP5 = new OscP5(this,47110);
 void draw() {
 
   background(0);
+
   panel.update();
   wave.update();
   tWave.update();
   loud.update();
+  if(intro.isActive())
+  intro.update();
+  if(timer<0)
+  outro.update();
   update();
 
 }
 
 void update(){
+  if(!intro.isActive())
   timer = initTime-millis();
+
   // tempFreq =map(sin(millis()*0.001),-1,1,450,550);
 }
 
 void oscEvent(OscMessage theOscMessage) {
   /* print the address pattern and the typetag of the received OscMessage */
-// println(theOscMessage.get(1).floatValue());
-tempFreq = theOscMessage.get(1).floatValue();
-// waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
+  // println(theOscMessage.get(1).floatValue());
+  tempFreq = theOscMessage.get(1).floatValue();
+  // waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
 }
