@@ -9,10 +9,8 @@
 
    void init(float x, float y)
    {
-     px = x;
-     py = y;
-     minim = VisualPrototype.minim;
-     in = VisualPrototype.in;
+     px = (int)x;
+     py = (int)y;
    }
 
    void update()

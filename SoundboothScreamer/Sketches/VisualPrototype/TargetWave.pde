@@ -11,9 +11,9 @@ class TargetWave {
 int tStamp=0;
 int tCount=0;
 
-  void init(int x, int y){
-    px = x;
-    py = y;
+  void init(float x, float y){
+    px = (int)x;
+    py = (int)y;
     // use the getLineIn method of the Minim object to get an AudioInput    osc.patch(out);
   }
 

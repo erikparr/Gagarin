@@ -32,15 +32,15 @@ OscP5 oscP5;
 PFont font;
 IntroScreen intro = new IntroScreen();
 OutroScreen outro = new OutroScreen();
-Panel panel = new Panel();
-Waveform wave = new Waveform();
-TargetWave tWave = new TargetWave();
-LoudnessMonitor loud = new LoudnessMonitor();
-public static float tempFreq=0; // replace with real input from osc
-public static Minim minim;
-public static AudioInput in;
-public static float timer;
-public static float targetFreq = 250;
+public Panel panel = new Panel();
+public Waveform wave = new Waveform();
+public TargetWave tWave = new TargetWave();
+// public LoudnessMonitor loud = new LoudnessMonitor();
+public  float tempFreq=0; // replace with real input from osc
+public  Minim minim;
+public  AudioInput in;
+public  float timer;
+public  float targetFreq = 250;
 public int EmRed =  color(254,0,12);
 public int EmBlue =  color(12,71,157);
 public int EmGrey =  color(90,90,90);
@@ -53,6 +53,9 @@ public int EmVermilion =  color(240,88,34);
 public int EmIndigo =  color(0,47,108);
 public int EmGrad1 =  color(232,29,48);
 public int EmGrad2 =  color(0,102,175);
+public PVector wavePos;
+public PVector tWavePos;
+public PVector panelPos;
 int initTime;
 public boolean sketchFullScreen() {
   return true;
@@ -71,10 +74,14 @@ outro.init();
   /* start oscP5, listening for incoming messages at port 47110 */
   oscP5 = new OscP5(this,47110);
 
-  loud.init(width/8, height/3, 50, 50);
-  panel.init(width/4, height);
-  wave.init(width/3, 0);
-  tWave.init(width/3, height/2);
+ wavePos = new PVector(width/3, 0);
+ tWavePos = new PVector(width/3, height/2);
+ panelPos = new PVector(width/4, height);
+
+  // loud.init(width/8, height/3, 50, 50);
+  panel.init(panelPos.x, panelPos.y);
+  wave.init(wavePos.x, wavePos.y);
+  tWave.init(tWavePos.x, tWavePos.y);
 
   initTime = millis()+60000; //60 seconds
 }
@@ -83,23 +90,19 @@ public void draw() {
 
   background(0);
 
+  if(intro.isActive()){
+  intro.update();
+}else{
+  timer = initTime-millis();
   panel.update();
   wave.update();
   tWave.update();
-  loud.update();
-  if(intro.isActive())
-  intro.update();
+  // loud.update();
+}
   if(timer<0)
   outro.update();
-  update();
 
-}
-
-public void update(){
-  if(!intro.isActive())
-  timer = initTime-millis();
-
-  // tempFreq =map(sin(millis()*0.001),-1,1,450,550);
+tempFreq =map(sin(millis()*0.001f),-1,1,150,550);
 }
 
 public void oscEvent(OscMessage theOscMessage) {
@@ -109,32 +112,47 @@ public void oscEvent(OscMessage theOscMessage) {
   // waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
 }
 class IntroScreen{
-int timeCount;
-int introTimer;
+  int timeCount;
+  int introTimer;
 
-public void init(){
-timeCount = second()+10;
-}
+  public void init(){
+    timeCount = second()+20;
+  }
 
-public void update(){
-  background(0);
-  introTimer = timeCount-second();
-  textSize(96);
-text(introTimer, width/2, height/2);
+  public void update(){
+    background(0);
+    introTimer = timeCount-second();
+    if(introTimer>15){
+      textSize(96);
+      text("Instructions: ", width/2,height/2);
+    }
+    if(introTimer<15){
+      tWave.update();
+      textSize(64);
+      stroke(EmSilver);
+      text("Listen to the target frequency -- you must match the pitch to break the glass!", mouseX, mouseY);
+    }
+    if(introTimer<10 && introTimer>5){
+      wave.update();
+    }
 
-}
+  }
 
-public boolean isActive(){
-  if(introTimer>=0)
-  return true;
-  else
-  return false;
-}
+  public boolean isActive(){
+    if(introTimer>=0)
+    return true;
+    else
+    return false;
+  }
 
-//return intro duration in seconds
-public int getIntroDuration(){
-  return introTimer;
-}
+  // void waveformIntro(){
+  //
+  //   tWave.update();
+  // }
+  //return intro duration in seconds
+  public int getIntroDuration(){
+    return introTimer;
+  }
 }
 class LoudnessMonitor {
 
@@ -148,7 +166,6 @@ class LoudnessMonitor {
   float flashCol;
 
   public void init(int x, int y, int width, int height){
-    in = VisualPrototype.in;
     wd = width;
     ht = height;
     px = x;
@@ -244,6 +261,7 @@ class LoudnessMonitor {
   }
 }
 class OutroScreen{
+XML xml;
 
 public void init(){
 
@@ -260,9 +278,9 @@ public void update(){
 class Panel {
   int w,h;
 
-  public void init(int width, int height){
-    w= width;
-    h= height;
+  public void init(float width, float height){
+    w= (int)width;
+    h= (int)height;
     rectMode(CORNER);
     textAlign(LEFT, CENTER);
 
@@ -274,10 +292,12 @@ class Panel {
     noStroke();
     rect(0,0,w+51,h);
 
-    textBox();
+    textBox("Countdown: ", w/2, h/2, 92);
+    stopwatch(w/2, h-(h/5), 225,225);
+
     fill(200,200,200);
     textSize(96);
-    text((int)VisualPrototype.tempFreq, 100, h/2);
+    text((int)tempFreq, 100, h/2);
 
     fill(EmSilver);
     noStroke();
@@ -290,25 +310,19 @@ class Panel {
     line(w+115,0,w+115,height);
   }
 
-  public void textBox(){
-    int px = 0;
-    int py = h-h/3;
-    int wd = w;
-    int ht = 70;
-    textSize(52);
-
+  public void textBox(String text, int px, int py, int textSize){
+    textSize(textSize);
     fill(EmGrey);
     noStroke();
-    rect(px,py-70,wd,h/3);
+    rect(px,py,textWidth(text),textSize+(textSize*0.2f));
     noFill();
     stroke(0);
-    rect(px,py-70,wd,h/3,7);
+    rect(px,py,textWidth(text),textSize+(textSize*0.2f),7);
 
     fill(EmRed);
-    text("Countdown: "+ (int)timer/1000, px,py-(ht/2));
+    text(text + (int)timer/1000, px,py);
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
-    stopwatch(wd/2, h-(h/5), 225,225);
   }
 
   // void freqChart(int px, int py){
@@ -367,9 +381,9 @@ class TargetWave {
 int tStamp=0;
 int tCount=0;
 
-  public void init(int x, int y){
-    px = x;
-    py = y;
+  public void init(float x, float y){
+    px = (int)x;
+    py = (int)y;
     // use the getLineIn method of the Minim object to get an AudioInput    osc.patch(out);
   }
 
@@ -442,10 +456,8 @@ int tCount=0;
 
    public void init(float x, float y)
    {
-     px = x;
-     py = y;
-     minim = VisualPrototype.minim;
-     in = VisualPrototype.in;
+     px = (int)x;
+     py = (int)y;
    }
 
    public void update()

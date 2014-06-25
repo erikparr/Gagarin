@@ -10,7 +10,6 @@ class LoudnessMonitor {
   float flashCol;
 
   void init(int x, int y, int width, int height){
-    in = VisualPrototype.in;
     wd = width;
     ht = height;
     px = x;

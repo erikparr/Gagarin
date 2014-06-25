@@ -1,9 +1,9 @@
 class Panel {
   int w,h;
 
-  void init(int width, int height){
-    w= width;
-    h= height;
+  void init(float width, float height){
+    w= (int)width;
+    h= (int)height;
     rectMode(CORNER);
     textAlign(LEFT, CENTER);
 
@@ -15,10 +15,12 @@ class Panel {
     noStroke();
     rect(0,0,w+51,h);
 
-    textBox();
+    textBox("Countdown: ", w/2, h/2, 92);
+    stopwatch(w/2, h-(h/5), 225,225);
+
     fill(200,200,200);
     textSize(96);
-    text((int)VisualPrototype.tempFreq, 100, h/2);
+    text((int)tempFreq, 100, h/2);
 
     fill(EmSilver);
     noStroke();
@@ -31,25 +33,19 @@ class Panel {
     line(w+115,0,w+115,height);
   }
 
-  void textBox(){
-    int px = 0;
-    int py = h-h/3;
-    int wd = w;
-    int ht = 70;
-    textSize(52);
-
+  void textBox(String text, int px, int py, int textSize){
+    textSize(textSize);
     fill(EmGrey);
     noStroke();
-    rect(px,py-70,wd,h/3);
+    rect(px,py,textWidth(text),textSize+(textSize*0.2));
     noFill();
     stroke(0);
-    rect(px,py-70,wd,h/3,7);
+    rect(px,py,textWidth(text),textSize+(textSize*0.2),7);
 
     fill(EmRed);
-    text("Countdown: "+ (int)timer/1000, px,py-(ht/2));
+    text(text + (int)timer/1000, px,py);
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
-    stopwatch(wd/2, h-(h/5), 225,225);
   }
 
   // void freqChart(int px, int py){
