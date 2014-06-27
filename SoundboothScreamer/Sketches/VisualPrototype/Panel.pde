@@ -1,49 +1,56 @@
 class Panel {
-  int w,h;
 
-  void init(float width, float height){
-    w= (int)width;
-    h= (int)height;
+  void init(){
     rectMode(CORNER);
     textAlign(LEFT, CENTER);
+  }
+
+  void updateWindow(float width, float height){
+    int w= (int)width;
+    int h= (int)height;
+    noFill();
+    stroke(EmSilver);
+    rect(0,0,w+51,h,7);
 
   }
 
-  void update(){
-
-    fill(0);
-    noStroke();
-    rect(0,0,w+51,h);
-
-    textBox("Countdown: ", w/2, h/2, 92);
-    stopwatch(w/2, h-(h/5), 225,225);
-
-    fill(200,200,200);
-    textSize(96);
-    text((int)tempFreq, 100, h/2);
-
+  void updateSidebar(float width, float height){
+    int w= (int)width;
+    int h= (int)height;
     fill(EmSilver);
     noStroke();
     rect(w+15,0,100,h); // sidebar
 
-    setGradient(w+15,0+150,100,h/2-150,EmSilver,EmRed);
-    setGradient(w+15,h/2,100,h/2-150,EmRed,EmSilver);
-    stroke(200);
-    strokeWeight(1);
-    line(w+115,0,w+115,height);
   }
 
-  void textBox(String text, int px, int py, int textSize){
+  void updateGradient(float width, float height, color color1, color color2){
+    int w= (int)width;
+    int h= (int)height;
+    setGradient(w+15,0+150,100,h/2-150,color1,color2);
+    setGradient(w+15,h/2,100,h/2-150,color2,color1);
+    // setGradient(w+15,0+150,100,h/2-150,EmSilver,EmRed);
+    // setGradient(w+15,h/2,100,h/2-150,EmRed,EmSilver);
+
+  }
+
+  // void update(){
+  //   updateStopwatch(w/2, h-(h/5), 225,225);
+  // }
+
+  void textBox(String text, int w, int h, int textSize, int numLines){
+    int offset = 40;
+    int wd = 3;
     textSize(textSize);
+    stroke(EmBlue);
+    strokeWeight(3);
+    noFill();
+    rect(-offset/2,-offset/2,w+offset,h,7);
     fill(EmGrey);
     noStroke();
-    rect(px,py,textWidth(text),textSize+(textSize*0.2));
-    noFill();
-    stroke(0);
-    rect(px,py,textWidth(text),textSize+(textSize*0.2),7);
+    rect(-offset/2+(wd/2),-offset/2+(wd/2),w+offset-wd,h-wd,7);
 
-    fill(EmRed);
-    text(text + (int)timer/1000, px,py);
+fill(255);
+    text(text,0,0,w,h);
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
   }
@@ -81,13 +88,12 @@ class Panel {
 
   }
 
-  void stopwatch(int px, int py, int wd, int ht){
+  void updateStopwatch(float timescale, int w, int h){
     float offset = (1.5*PI);
     fill(50,50,50);
-    ellipse(px, py, wd, ht);
+    ellipse(0, 0, w, h);
     fill(EmBlue);
-
-    arc(px, py, wd, ht, 0+offset, map(VisualPrototype.this.timer, 0, 60000, 0+offset, (2*PI)+offset), PIE);
+    arc(0, 0, w, h, 0+offset, map(timescale, 0, 60000, 0+offset, (2*PI)+offset), PIE);
   }
 
 }

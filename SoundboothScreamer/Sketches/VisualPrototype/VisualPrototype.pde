@@ -15,15 +15,17 @@ public Panel panel = new Panel();
 public Waveform wave = new Waveform();
 public TargetWave tWave = new TargetWave();
 // public LoudnessMonitor loud = new LoudnessMonitor();
-public  float tempFreq=0; // replace with real input from osc
+public  float tempFreq=100; // replace with real input from osc
 public  Minim minim;
 public  AudioInput in;
 public  float timer;
 public  float targetFreq = 250;
 public color EmRed =  color(254,0,12);
 public color EmBlue =  color(12,71,157);
+public color EmBlue1 =  color(12,71,157,168);
 public color EmGrey =  color(90,90,90);
 public color EmSilver =  color(181,181,181);
+public color EmSilver1 =  color(181,181,181,168);
 public color EmYellow =  color(255,215,0);
 public color EmBurgundy =  color(166,25,46);
 public color EmRuby =  color(215,56,114);
@@ -58,9 +60,7 @@ outro.init();
  panelPos = new PVector(width/4, height);
 
   // loud.init(width/8, height/3, 50, 50);
-  panel.init(panelPos.x, panelPos.y);
-  wave.init(wavePos.x, wavePos.y);
-  tWave.init(tWavePos.x, tWavePos.y);
+  panel.init();
 
   initTime = millis()+60000; //60 seconds
 }
@@ -73,7 +73,7 @@ void draw() {
   intro.update();
 }else{
   timer = initTime-millis();
-  panel.update();
+  panel.updateStopwatch(timer, 225,225);
   wave.update();
   tWave.update();
   // loud.update();
@@ -81,7 +81,7 @@ void draw() {
   if(timer<0)
   outro.update();
 
-tempFreq =map(sin(millis()*0.001),-1,1,150,550);
+tempFreq = map(sin(millis()*0.001),-1,1,0,600);
 }
 
 void oscEvent(OscMessage theOscMessage) {

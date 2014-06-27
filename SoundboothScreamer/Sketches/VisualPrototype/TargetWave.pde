@@ -1,6 +1,5 @@
 class TargetWave {
 
-  int px, py;
   int step =1; // num pixels spaced between each sample drawn
   int yScaler = 66; // scale the height of the waves being drawn
   Oscil osc;
@@ -11,11 +10,6 @@ class TargetWave {
 int tStamp=0;
 int tCount=0;
 
-  void init(float x, float y){
-    px = (int)x;
-    py = (int)y;
-    // use the getLineIn method of the Minim object to get an AudioInput    osc.patch(out);
-  }
 
   void update(){
 
@@ -27,23 +21,16 @@ int tCount=0;
     strokeWeight(2.5);  // Thicker
     for(int i = 0; i < wavetable.length - 1; i++)
     {
-      line( px+i, py+wavetable[i]*yScaler*0.42, px+i+step, py+wavetable[i]*yScaler*0.42 );
+      line( i, wavetable[i]*yScaler*0.42, i+step, wavetable[i]*yScaler*0.42 );
     }
 
     noFill();
     strokeWeight(0.5);
     stroke(180);
-    rect(px,py-65,width-width/3,height/7,7);
+    rect(0,-65,width-width/3,height/7,7);
     fill(EmSilver);
     stroke(0,0,0,0);
-    rect(px,py-65,map(tCount,0,5000,0,width-width/3),height/7,7);
-
-
-    // for( int i = 0; i < out.bufferSize() - 1; i++ )
-    //     {
-    //       line( px+i, py+out.left.get(i)*yScaler, px+i+step, py+out.left.get(i+1)*yScaler );
-    //     }
-
+    rect(0,-65,map(tCount,0,5000,0,width-width/3),height/7,7);
   }
 
   void updateTimer(){

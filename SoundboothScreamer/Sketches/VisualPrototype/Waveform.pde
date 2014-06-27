@@ -1,17 +1,10 @@
  class Waveform {
 
-   Minim minim;
-   AudioInput in;
-   float px, py;
+   float  py;
    int step = 3; // num pixels spaced between each sample drawn
    float bufScaler = 0.666; // scale the audioBuffer drawn for smaller waveform
    int yScaler = 66; // scale the height of the waves being drawn
 
-   void init(float x, float y)
-   {
-     px = (int)x;
-     py = (int)y;
-   }
 
    void update()
    {
@@ -22,7 +15,7 @@
      strokeWeight(2.5);  // Thicker
      for(int i = 0; i < (in.bufferSize()*0.88) - 1; i++)
      {
-       line( px+i, py+in.left.get(i)*yScaler, px+i+step, py+in.left.get(i+step)*yScaler );
+       line( i, py+in.left.get(i)*yScaler, i+step, py+in.left.get(i+step)*yScaler );
      }
 
    }
