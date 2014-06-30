@@ -8,16 +8,15 @@
 
    void update()
    {
+     noFill();
      // stroke(0, 255,208);
-     py = max(map(tempFreq,0,600,height-height/3,height/3), height/3);
      stroke(EmBlue);
      // draw the waveforms so we can see what we are monitoring
      strokeWeight(2.5);  // Thicker
      for(int i = 0; i < (in.bufferSize()*0.88) - 1; i++)
      {
-       line( i, py+in.left.get(i)*yScaler, i+step, py+in.left.get(i+step)*yScaler );
+       line( i, in.left.get(i)*yScaler, i+step, py+in.left.get(i+step)*yScaler );
      }
-
    }
 
  }

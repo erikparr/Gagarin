@@ -55,16 +55,15 @@ public int EmVermilion =  color(240,88,34);
 public int EmIndigo =  color(0,47,108);
 public int EmGrad1 =  color(232,29,48);
 public int EmGrad2 =  color(0,102,175);
-public PVector wavePos;
 public PVector tWavePos;
-public PVector panelPos;
+public PVector panelSize;
 int initTime;
 public boolean sketchFullScreen() {
   return true;
 }
 
 public void setup() {
-  size(1440, 1040, P2D);
+  size(1366, 768, P2D); // 1600 x 900
   font = createFont("GillSans", 48);
 intro.init();
 outro.init();
@@ -76,9 +75,8 @@ outro.init();
   /* start oscP5, listening for incoming messages at port 47110 */
   oscP5 = new OscP5(this,47110);
 
- wavePos = new PVector(width/3, 0);
  tWavePos = new PVector(width/3, height/2);
- panelPos = new PVector(width/4, height);
+panelSize = new PVector(width*0.286f, height);
 
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
@@ -88,13 +86,13 @@ outro.init();
 
 public void draw() {
 
-  background(0);
+  background(EmGrey);
 
   if(intro.isActive()){
   intro.update();
 }else{
   timer = initTime-millis();
-  panel.updateStopwatch(timer, 225,225);
+panel.drawTimerPanel(timer, true);
   wave.update();
   tWave.update();
   // loud.update();
@@ -114,45 +112,81 @@ public void oscEvent(OscMessage theOscMessage) {
 class IntroScreen{
   int timeCount;
   int introTimer;
+Boolean hlPanel = false;
+Boolean hlWatch = false;
+Boolean hlWave = false;
   Panel panel = new Panel();
   public void init(){
     timeCount = second()+30;
     panel.init();
+
+
   }
 
   public void update(){
     pushMatrix();
-    background(0);
+    background(EmGrey);
     introTimer = timeCount-second();
+    panel.updateWindow(panelSize.x, panelSize.y, hlPanel);
+
+    pushMatrix();
+    translate(0, height-(height*0.4f));
+    panel.drawTimerPanel(millis(), hlWatch);
+    popMatrix();
+
+    pushMatrix();
+    translate(tWavePos.x,tWavePos.y-height*0.39f);
+    panel.waveWindow(hlWave);
+    popMatrix();
+
+
     if(introTimer>25){
+
       translate(width/3,height/3);
-      panel.textBox("You get 90 seconds to attempt to break the glass with your voice. \n Try to hit the right pitch by screaming as loud as you can.\n To beat the record, you must break the glass in XX seconds. ",600,400,32,3);
+      panel.textBox("You get 90 seconds to attempt to break the glass with your voice. Try to hit the right pitch by screaming as loud as you can. To beat the record, you must break the glass in XX seconds. ",600,300,32,3);
     }
     if(introTimer<25 && introTimer>20){
-      translate(panelPos.x/2, height-(height/5));
+      hlWatch = true;
       pushMatrix();
+      translate(panelSize.x/2, height-(height/5));
       translate(-100,-200);
       panel.textBox("Beat the clock",200,100,32,3);
       popMatrix();
-      panel.updateStopwatch(millis(), 225,225);
     }
-if(introTimer<=20 && introTimer>15){
-translate(tWavePos.x,tWavePos.y);
-  pushMatrix();
-  translate(0,-250);
-  panel.textBox("Listen to the sound, you must sing this pitch in order to break the glass!",400,200,32,3);
-  popMatrix();
-  tWave.update();
-}
-if(introTimer<=15 && introTimer>10){
-translate(tWavePos.x,tWavePos.y);
-  pushMatrix();
-  translate(0,-250);
-  panel.textBox("The pitch of your voice is shown in blue.",400,200,32,3);
-  popMatrix();
-  tWave.update();
-  wave.update();
-}
+    if(introTimer<=20 && introTimer>15){
+      hlWatch = false;
+      hlWave = true;
+      pushMatrix();
+      translate(tWavePos.x,tWavePos.y);
+      pushMatrix();
+      translate(0,-height*0.39f);
+      panel.waveWindow(hlWave);
+      popMatrix();
+      tWave.update();
+      translate(0,-250);
+      panel.textBox("Listen to the sound, you must sing this pitch in order to break the glass! ",400,200,32,3);
+      popMatrix();
+    }
+    if(introTimer<=15 && introTimer>10){
+
+      //draw target wave AND voice wave
+      pushMatrix();
+      translate(tWavePos.x,tWavePos.y);
+      pushMatrix();
+      translate(0,-height*0.39f);
+      panel.waveWindow(hlWave);
+      popMatrix();
+
+      tWave.update();
+      pushMatrix();
+      translate(0,map(tempFreq,0,600,-200,200)); // move wave up or down with frequency
+      wave.update();
+      popMatrix();
+      translate(0,-250);
+      panel.textBox("The pitch of your voice is shown in blue. "+mouseX ,400,200,32,3);
+      popMatrix();
+
+    }
     popMatrix();
   }
 
@@ -300,14 +334,20 @@ class Panel {
     textAlign(LEFT, CENTER);
   }
 
-  public void updateWindow(float width, float height){
+  public void updateWindow(float width, float height, Boolean highlight){
     int w= (int)width;
     int h= (int)height;
-    noFill();
-    stroke(EmSilver);
-    rect(0,0,w+51,h,7);
-
+    fill(EmSilver);
+    rect(0,0,w,h);
+    textSize(46);
+    fill(EmRed);
+    text("HIGHSCORE: 1:52",width/20,height/15);
+    if(highlight){
+      fill(0,0,0,150);
+      rect(0,0,w,h);
+    }
   }
+
 
   public void updateSidebar(float width, float height){
     int w= (int)width;
@@ -332,22 +372,45 @@ class Panel {
   //   updateStopwatch(w/2, h-(h/5), 225,225);
   // }
 
+  public void waveWindow(Boolean highlight){
+    stroke(EmSilver);
+    // noFill();
+    // strokeWeight(3);
+    // rect(0,0,width*0.658,height*0.78);
+    fill(0);
+    noStroke();
+    rect(0,0,width*0.658f,height*0.78f);
+    if(highlight){
+      fill(0,155);
+      rect(0,0,width*0.658f,height*0.78f);
+    }
+  }
+
   public void textBox(String text, int w, int h, int textSize, int numLines){
     int offset = 40;
     int wd = 3;
     textSize(textSize);
-    stroke(EmBlue);
-    strokeWeight(3);
-    noFill();
-    rect(-offset/2,-offset/2,w+offset,h,7);
-    fill(EmGrey);
-    noStroke();
-    rect(-offset/2+(wd/2),-offset/2+(wd/2),w+offset-wd,h-wd,7);
+    // stroke(EmBlue);
+    // strokeWeight(3);
+    // noFill();
+    // rect(-offset/2,-offset/2,w+offset,h,7);
+    pushMatrix();
 
-fill(255);
+    pushMatrix();
+    translate(w/45,w/45);
+    fill(EmSilver);
+    noStroke();
+    rect(-offset/2+(wd/2),(wd/2),w+offset-wd,h-wd+15);
+    popMatrix();
+    fill(EmBlue);
+    noStroke();
+    rect(-offset/2+(wd/2),(wd/2),w+offset-wd,h-wd+15);
+
+    fill(255);
     text(text,0,0,w,h);
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
+    popMatrix();
   }
 
   // void freqChart(int px, int py){
@@ -383,12 +446,18 @@ fill(255);
 
   }
 
-  public void updateStopwatch(float timescale, int w, int h){
+  public void drawTimerPanel(float timescale,  Boolean highlight){
+    fill(EmIndigo);
+    float w = panelSize.x;
+    float h = panelSize.y*0.455f;
+    rect(0,0,w,h);
     float offset = (1.5f*PI);
-    fill(50,50,50);
-    ellipse(0, 0, w, h);
-    fill(EmBlue);
-    arc(0, 0, w, h, 0+offset, map(timescale, 0, 60000, 0+offset, (2*PI)+offset), PIE);
+    fill(EmBurgundy);
+    arc(w/2,h/2, 225, 225, 0+offset, map(timescale, 0, 60000,(2*PI)+offset, 0+offset), PIE);
+    if(highlight){
+      fill(0,0,0,150);
+      rect(0,0,w,h);
+    }
   }
 
 }
@@ -397,7 +466,7 @@ class TargetWave {
   int step =1; // num pixels spaced between each sample drawn
   int yScaler = 66; // scale the height of the waves being drawn
   Oscil osc;
-  float[] wavetable = new float[1024];
+  float[] wavetable = new float[900];
   float count=0.0f;
   boolean inRange = false;
   boolean lockFreq = false;
@@ -406,6 +475,7 @@ int tCount=0;
 
 
   public void update(){
+pushMatrix();
 
     // stroke(255, 235, 22);
     stroke(EmRed);
@@ -420,11 +490,9 @@ int tCount=0;
 
     noFill();
     strokeWeight(0.5f);
-    stroke(180);
-    rect(0,-65,width-width/3,height/7,7);
-    fill(EmSilver);
-    stroke(0,0,0,0);
-    rect(0,-65,map(tCount,0,5000,0,width-width/3),height/7,7);
+    stroke(EmGrey);
+    rect(0,-yScaler*0.85f,width*0.66f,height/7,7);
+    popMatrix();
   }
 
   public void updateTimer(){
@@ -466,16 +534,15 @@ int tCount=0;
 
    public void update()
    {
+     noFill();
      // stroke(0, 255,208);
-     py = max(map(tempFreq,0,600,height-height/3,0), height/3);
      stroke(EmBlue);
      // draw the waveforms so we can see what we are monitoring
      strokeWeight(2.5f);  // Thicker
      for(int i = 0; i < (in.bufferSize()*0.88f) - 1; i++)
      {
-       line( i, py+in.left.get(i)*yScaler, i+step, py+in.left.get(i+step)*yScaler );
+       line( i, in.left.get(i)*yScaler, i+step, py+in.left.get(i+step)*yScaler );
      }
-
    }
 
  }

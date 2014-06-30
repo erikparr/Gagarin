@@ -3,7 +3,7 @@ class TargetWave {
   int step =1; // num pixels spaced between each sample drawn
   int yScaler = 66; // scale the height of the waves being drawn
   Oscil osc;
-  float[] wavetable = new float[1024];
+  float[] wavetable = new float[900];
   float count=0.0;
   boolean inRange = false;
   boolean lockFreq = false;
@@ -12,6 +12,7 @@ int tCount=0;
 
 
   void update(){
+pushMatrix();
 
     // stroke(255, 235, 22);
     stroke(EmRed);
@@ -26,11 +27,9 @@ int tCount=0;
 
     noFill();
     strokeWeight(0.5);
-    stroke(180);
-    rect(0,-65,width-width/3,height/7,7);
-    fill(EmSilver);
-    stroke(0,0,0,0);
-    rect(0,-65,map(tCount,0,5000,0,width-width/3),height/7,7);
+    stroke(EmGrey);
+    rect(0,-yScaler*0.85,width*0.66,height/7,7);
+    popMatrix();
   }
 
   void updateTimer(){

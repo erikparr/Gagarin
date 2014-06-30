@@ -5,14 +5,20 @@ class Panel {
     textAlign(LEFT, CENTER);
   }
 
-  void updateWindow(float width, float height){
+  void updateWindow(float width, float height, Boolean highlight){
     int w= (int)width;
     int h= (int)height;
-    noFill();
-    stroke(EmSilver);
-    rect(0,0,w+51,h,7);
-
+    fill(EmSilver);
+    rect(0,0,w,h);
+    textSize(46);
+    fill(EmRed);
+    text("HIGHSCORE: 1:52",width/20,height/15);
+    if(highlight){
+      fill(0,0,0,150);
+      rect(0,0,w,h);
+    }
   }
+
 
   void updateSidebar(float width, float height){
     int w= (int)width;
@@ -37,22 +43,45 @@ class Panel {
   //   updateStopwatch(w/2, h-(h/5), 225,225);
   // }
 
+  void waveWindow(Boolean highlight){
+    stroke(EmSilver);
+    // noFill();
+    // strokeWeight(3);
+    // rect(0,0,width*0.658,height*0.78);
+    fill(0);
+    noStroke();
+    rect(0,0,width*0.658,height*0.78);
+    if(highlight){
+      fill(0,155);
+      rect(0,0,width*0.658,height*0.78);
+    }
+  }
+
   void textBox(String text, int w, int h, int textSize, int numLines){
     int offset = 40;
     int wd = 3;
     textSize(textSize);
-    stroke(EmBlue);
-    strokeWeight(3);
-    noFill();
-    rect(-offset/2,-offset/2,w+offset,h,7);
-    fill(EmGrey);
-    noStroke();
-    rect(-offset/2+(wd/2),-offset/2+(wd/2),w+offset-wd,h-wd,7);
+    // stroke(EmBlue);
+    // strokeWeight(3);
+    // noFill();
+    // rect(-offset/2,-offset/2,w+offset,h,7);
+    pushMatrix();
 
-fill(255);
+    pushMatrix();
+    translate(w/45,w/45);
+    fill(EmSilver);
+    noStroke();
+    rect(-offset/2+(wd/2),(wd/2),w+offset-wd,h-wd+15);
+    popMatrix();
+    fill(EmBlue);
+    noStroke();
+    rect(-offset/2+(wd/2),(wd/2),w+offset-wd,h-wd+15);
+
+    fill(255);
     text(text,0,0,w,h);
     // text(mouseX +" "+mouseY,20,20);
     // text(sin(millis()*mouseX),20,40);
+    popMatrix();
   }
 
   // void freqChart(int px, int py){
@@ -88,12 +117,18 @@ fill(255);
 
   }
 
-  void updateStopwatch(float timescale, int w, int h){
+  void drawTimerPanel(float timescale,  Boolean highlight){
+    fill(EmIndigo);
+    float w = panelSize.x;
+    float h = panelSize.y*0.455;
+    rect(0,0,w,h);
     float offset = (1.5*PI);
-    fill(50,50,50);
-    ellipse(0, 0, w, h);
-    fill(EmBlue);
-    arc(0, 0, w, h, 0+offset, map(timescale, 0, 60000, 0+offset, (2*PI)+offset), PIE);
+    fill(EmBurgundy);
+    arc(w/2,h/2, 225, 225, 0+offset, map(timescale, 0, 60000,(2*PI)+offset, 0+offset), PIE);
+    if(highlight){
+      fill(0,0,0,150);
+      rect(0,0,w,h);
+    }
   }
 
 }

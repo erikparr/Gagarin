@@ -34,16 +34,15 @@ public color EmVermilion =  color(240,88,34);
 public color EmIndigo =  color(0,47,108);
 public color EmGrad1 =  color(232,29,48);
 public color EmGrad2 =  color(0,102,175);
-public PVector wavePos;
 public PVector tWavePos;
-public PVector panelPos;
+public PVector panelSize;
 int initTime;
 boolean sketchFullScreen() {
   return true;
 }
 
 void setup() {
-  size(1440, 1040, P2D);
+  size(1366, 768, P2D); // 1600 x 900
   font = createFont("GillSans", 48);
 intro.init();
 outro.init();
@@ -55,9 +54,8 @@ outro.init();
   /* start oscP5, listening for incoming messages at port 47110 */
   oscP5 = new OscP5(this,47110);
 
- wavePos = new PVector(width/3, 0);
  tWavePos = new PVector(width/3, height/2);
- panelPos = new PVector(width/4, height);
+panelSize = new PVector(width*0.286, height);
 
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
@@ -67,13 +65,13 @@ outro.init();
 
 void draw() {
 
-  background(0);
+  background(EmGrey);
 
   if(intro.isActive()){
   intro.update();
 }else{
   timer = initTime-millis();
-  panel.updateStopwatch(timer, 225,225);
+panel.drawTimerPanel(timer, true);
   wave.update();
   tWave.update();
   // loud.update();
