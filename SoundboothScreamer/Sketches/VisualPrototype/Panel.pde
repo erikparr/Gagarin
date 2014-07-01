@@ -1,18 +1,25 @@
 class Panel {
+  PImage logo;
+  PImage logoMsk;
 
   void init(){
     rectMode(CORNER);
     textAlign(LEFT, CENTER);
+    logo = loadImage("logoSm.jpg");  // Load an image into the program
+    logoMsk = loadImage("logoSmMsk3.jpg");  // Load an image into the program
+    logo.mask(logoMsk);
   }
 
   void updateWindow(float width, float height, Boolean highlight){
     int w= (int)width;
     int h= (int)height;
+    noStroke();
     fill(EmSilver);
     rect(0,0,w,h);
     textSize(46);
     fill(EmRed);
-    text("HIGHSCORE: 1:52",width/20,height/15);
+    text("HIGHSCORE: 1:52",width/20,height/10);
+    image(logo,-20,-20);
     if(highlight){
       fill(0,0,0,150);
       rect(0,0,w,h);
@@ -29,18 +36,16 @@ class Panel {
 
   }
 
-  void updateGradient(float width, float height, color color1, color color2){
-    int w= (int)width;
-    int h= (int)height;
-    setGradient(w+15,0+150,100,h/2-150,color1,color2);
-    setGradient(w+15,h/2,100,h/2-150,color2,color1);
+  void updateGradient(float x, color color1, color color2){
+    setGradient(x+15,0+150,100,height/2-150,color1,color2);
+    setGradient(x+15,height/2,100,height/2-150,color2,color1);
     // setGradient(w+15,0+150,100,h/2-150,EmSilver,EmRed);
     // setGradient(w+15,h/2,100,h/2-150,EmRed,EmSilver);
 
   }
 
   // void update(){
-  //   updateStopwatch(w/2, h-(h/5), 225,225);
+  // updateStopwatch(w/2, h-(h/5), 225,225);
   // }
 
   void waveWindow(Boolean highlight){
@@ -88,10 +93,11 @@ class Panel {
   // rect(px,py,wd,ht);
   //
   // }
-  void setGradient(int x, int y, float w, float h, color c1, color c2 ) {
+  void setGradient(float pX, float pY, float w, float h, color c1, color c2 ) {
 
     noFill();
-
+    int x = (int)pX;
+    int y = (int)pX;
     for (int i = y; i <= y+h; i++) {
       float inter = map(i, y, y+h, 0, 1);
       color c = lerpColor(c1, c2, inter);
@@ -124,7 +130,7 @@ class Panel {
     rect(0,0,w,h);
     float offset = (1.5*PI);
     fill(EmBurgundy);
-    arc(w/2,h/2, 225, 225, 0+offset, map(timescale, 0, 60000,(2*PI)+offset, 0+offset), PIE);
+    arc(w/2,h/2, 225, 225, 0+offset, map(timescale, startTime, 0,(2*PI)+offset, 0+offset), PIE);
     if(highlight){
       fill(0,0,0,150);
       rect(0,0,w,h);
