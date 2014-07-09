@@ -6,6 +6,7 @@ import ddf.minim.*; // audio library -- used for audio visualization only
 import ddf.minim.ugens.*;
 import oscP5.*;
 import netP5.*;
+import processing.video.*;
 
 OscP5 oscP5;
 PFont font;
@@ -21,8 +22,11 @@ public  float timer;
 public  float targetFreq = 250;
 public color EmRed =  color(254,0,12);
 public color EmBlue =  color(12,71,157);
+public color EmBlueGrad =  color(6,117,190);
+public color EmCyan =  color(0,163,224);
 public color EmBlue1 =  color(12,71,157,168);
 public color EmGrey =  color(90,90,90);
+public color EmSea =  color(0,112,150);
 public color EmSilver =  color(181,181,181);
 public color EmSilver1 =  color(181,181,181,168);
 public color EmYellow =  color(255,215,0);
@@ -48,11 +52,13 @@ boolean sketchFullScreen() {
 
 void setup() {
   size(1366, 768, P2D); // 1600 x 900
-  font = createFont("GillSans", 48);
-  startTime = 90;
+  // font = createFont("GillSans", 48);
+  font = createFont("EMprintW01-Regular", 136);
+  startTime = 10;
   initTime =  (int)(millis()*0.001)+startTime; //90 seconds
   intro.init();
   outro.init();
+  tWave.init();
   textFont(font);
   textAlign(CENTER, CENTER);
   minim = new Minim(this);
@@ -64,8 +70,6 @@ void setup() {
   tWavePos = new PVector(width/3, height/2);
   panelSize = new PVector(width*0.286, height);
 
-
-
   minFreq = targetFreq-200; //set min and max freq to target frequency from SC
   maxFreq = targetFreq+200;
   // loud.init(width/8, height/3, 50, 50);
@@ -74,49 +78,62 @@ void setup() {
 
 void draw() {
 
-  background(EmGrey);
-timer = initTime-(millis()*0.001);
+  setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
+
+  timer = (millis()*0.001);
 
   if(intro.isActive()){
     intro.update();
     }else{
       tWave.setInputFreq(inFreq);
-      updateElements();
+      panel.wavePanel();
     }
-    if(timer<0)
-    outro.update();
+    // if(timer<0)
+    // outro.update();
 
   }
 
   void updateElements(){
 
-    background(EmGrey);
-    panel.updateWindow(panelSize.x, panelSize.y, false);
+    background(0);
+    // panel.updateWindow(panelSize.x, panelSize.y, false);
 
     pushMatrix();
-    translate(0, height-(height*0.4));
-    panel.drawTimerPanel(timer, false);
-    popMatrix();
+    // panel.drawTimerPanel(timer, false);
+    // popMatrix();
 
-    pushMatrix();
-    translate(tWavePos.x,tWavePos.y-height*0.39);
-    panel.waveWindow(false);
-    popMatrix();
+    // pushMatrix();
+    // translate(tWavePos.x,tWavePos.y-height*0.39);
+    // panel.waveWindow(false);
+    // popMatrix();
 
-    pushMatrix();
-    translate(tWavePos.x,tWavePos.y);
-    pushMatrix();
-    translate(0,-height*0.39);
-    panel.waveWindow(false);
-    popMatrix();
-    tWave.update(false);
-    translate(0,map(tWave.getInputFreq(),minFreq,maxFreq,-200,200)); // move wave up or down with frequency
-    wave.update();
+    // pushMatrix();
+    // translate(tWavePos.x,tWavePos.y);
+    // pushMatrix();
+    // translate(0,-height*0.39);
+    // panel.waveWindow(false);
+    // popMatrix();
+    panel.wavePanel();
     popMatrix();
 
 
 
   }
+
+void setGradient(int x, int y, float w, float h, color c1, color c2, int axis ) {
+
+  noFill();
+
+    for (int i = x; i <= x+w; i++) {
+      float inter = map(i, x, x+w, 0, 1);
+      color c = lerpColor(c1, c2, inter);
+      stroke(c);
+      if(i==w/2)
+      println(red(c)+" "+green(c)+" "+blue(c));
+      line(i, y, i, y+h);
+    }
+}
+
 
   void oscEvent(OscMessage theOscMessage) {
     /* print the address pattern and the typetag of the received OscMessage */

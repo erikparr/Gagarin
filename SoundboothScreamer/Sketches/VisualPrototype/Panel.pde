@@ -1,10 +1,12 @@
 class Panel {
   PImage logo;
   PImage logoMsk;
+  // CamGrab camera = new CamGrab();
 
   void init(){
     rectMode(CORNER);
     textAlign(LEFT, CENTER);
+    // camera.init();
     logo = loadImage("logoSm.jpg");  // Load an image into the program
     logoMsk = loadImage("logoSmMsk3.jpg");  // Load an image into the program
     logo.mask(logoMsk);
@@ -19,11 +21,27 @@ class Panel {
     textSize(46);
     fill(EmRed);
     text("HIGHSCORE: 1:52",width/20,height/10);
-    image(logo,-20,-20);
+    // image(logo,-20,-20);
+    // camera.update();
     if(highlight){
       fill(0,0,0,150);
       rect(0,0,w,h);
     }
+  }
+
+  void textTitles(String subTitle, String title){
+    pushStyle();
+    textAlign(CENTER);
+    fill(205);
+    textSize(62);
+    text(subTitle, width/2, height/2 - (height/5));
+    textSize(136);
+    text(title, width/2, height/2);
+    popStyle();
+  }
+
+  void textByline(String text){
+
   }
 
 
@@ -36,17 +54,23 @@ class Panel {
 
   }
 
-  void updateGradient(float x, color color1, color color2){
-    setGradient(x+15,0+150,100,height/2-150,color1,color2);
-    setGradient(x+15,height/2,100,height/2-150,color2,color1);
-    // setGradient(w+15,0+150,100,h/2-150,EmSilver,EmRed);
-    // setGradient(w+15,h/2,100,h/2-150,EmRed,EmSilver);
+
+  void wavePanel(){
+    pushMatrix();
+    translate(0, height/2);
+    tWave.update(false);
+    wave.update();
+    popMatrix();
+    fill(EmSilver);
+    textSize(42);
+    text(" Time left:", width/12, (height)-(height/4));
+    textSize(136);
+    text((int)timer, width/12, (height)-(height/4)+(height/10));
+    textSize(92);
+    text(" sec", width/5.5, (height)-(height/4)+(height/8));
+    image(logo,width -(width/4), (height)-(height/4)+(height/10));
 
   }
-
-  // void update(){
-  // updateStopwatch(w/2, h-(h/5), 225,225);
-  // }
 
   void waveWindow(Boolean highlight){
     stroke(EmSilver);
@@ -123,18 +147,14 @@ class Panel {
 
   }
 
-  void drawTimerPanel(float timescale,  Boolean highlight){
-    fill(EmIndigo);
-    float w = panelSize.x;
-    float h = panelSize.y*0.455;
-    rect(0,0,w,h);
+  void drawTimerPanel(float currentTime){
+    pushStyle();
+    noFill();
     float offset = (1.5*PI);
-    fill(EmBurgundy);
-    arc(w/2,h/2, 225, 225, 0+offset, map(timescale, startTime, 0,(2*PI)+offset, 0+offset), PIE);
-    if(highlight){
-      fill(0,0,0,150);
-      rect(0,0,w,h);
-    }
+    fill(EmGrey);
+    arc(0,0, 225, 225, 0+offset, map(currentTime, 90, 0,(2*PI)+offset, 0+offset), PIE);
+    fill(EmBlueGrad);
+    ellipse(0,0,100,100);
+    popStyle();
   }
-
 }

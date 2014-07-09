@@ -1,0 +1,32 @@
+[
+  {
+    "rank": 0,
+    "phone": "1210110",
+    "name": "Neitzsche",
+    "score": 62
+  },
+  {
+    "rank": 1,
+    "phone": "6660000",
+    "name": "Willie Nelson",
+    "score": 64
+  },
+  {
+    "rank": 2,
+    "phone": "6660000",
+    "name": "Billy Bob",
+    "score": 65
+  },
+  {
+    "rank": 3,
+    "phone": "6660000",
+    "name": "Daniel Plainview",
+    "score": 66
+  },
+  {
+    "rank": 4,
+    "phone": "6660000",
+    "name": "Oily Pete",
+    "score": 67
+  }
+]
