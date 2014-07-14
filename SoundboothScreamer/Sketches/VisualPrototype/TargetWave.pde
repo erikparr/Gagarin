@@ -26,7 +26,8 @@ class TargetWave {
 
   void update(Boolean active){
     pushMatrix();
-
+    pushStyle();
+    rectMode(CENTER);
     // stroke(255, 235, 22);
     stroke(255);
     updateSinewave();
@@ -42,17 +43,18 @@ shape(line,0,0);
     noFill();
     strokeWeight(0.5);
     stroke(EmGrey);
-    rect(0,-yScaler*0.85,width,height/7,7);
+    rect(width/2,0,width,height/7,7);
     if(active){
       fill(EmYellow1);
       noStroke();
-      rect(0,-yScaler*0.85,map(tCount, 0, 5000, 0, width),height/7,7);
+      rect(width/2,0,map(tCount, 0, 5000, 0, width),height/7,7);
     }
+    popStyle();
     popMatrix();
   }
 
   void updateTimer(){
-    if((inFreq > (targetFreq)-50) && (inFreq < (targetFreq)+50) || lockFreq == true){
+    if(inFreq > minFreq && inFreq < maxFreq || lockFreq == true){
       if(!inRange)
       tStamp = millis();
       targetCount();

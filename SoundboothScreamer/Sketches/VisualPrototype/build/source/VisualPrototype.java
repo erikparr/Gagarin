@@ -94,8 +94,8 @@ public void setup() {
   tWavePos = new PVector(width/3, height/2);
   panelSize = new PVector(width*0.286f, height);
 
-  minFreq = targetFreq-200; //set min and max freq to target frequency from SC
-  maxFreq = targetFreq+200;
+  minFreq = targetFreq-50; //set min and max freq to target frequency from SC
+  maxFreq = targetFreq+50;
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
   hiscore.init(day(),month());
@@ -105,7 +105,7 @@ public void draw() {
 
   setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
   // background(EmBlue);
-inFreq = map(sin(millis()*0.001f),-1,1,-100,100);
+inFreq = map(sin(millis()*0.001f),-1,1,targetFreq-100,targetFreq+100);
 
   timer = (millis()*0.001f);
 
@@ -515,7 +515,7 @@ class Panel {
     translate(0, height/2);
     tWave.update(true);
     pushMatrix();
-    translate(0,inFreq);
+    translate(0,map(inFreq,targetFreq-100,targetFreq+100,-100,100));
     wave.update();
     popMatrix();
     popMatrix();
@@ -617,7 +617,8 @@ class TargetWave {
 
   public void update(Boolean active){
     pushMatrix();
-
+    pushStyle();
+    rectMode(CENTER);
     // stroke(255, 235, 22);
     stroke(255);
     updateSinewave();
@@ -633,17 +634,18 @@ shape(line,0,0);
     noFill();
     strokeWeight(0.5f);
     stroke(EmGrey);
-    rect(0,-yScaler*0.85f,width,height/7,7);
+    rect(width/2,0,width,height/7,7);
     if(active){
       fill(EmYellow1);
       noStroke();
-      rect(0,-yScaler*0.85f,map(tCount, 0, 5000, 0, width),height/7,7);
+      rect(width/2,0,map(tCount, 0, 5000, 0, width),height/7,7);
     }
+    popStyle();
     popMatrix();
   }
 
   public void updateTimer(){
-    if((inFreq > (targetFreq)-50) && (inFreq < (targetFreq)+50) || lockFreq == true){
+    if(inFreq > minFreq && inFreq < maxFreq || lockFreq == true){
       if(!inRange)
       tStamp = millis();
       targetCount();

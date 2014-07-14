@@ -62,7 +62,7 @@ class Panel {
     translate(0, height/2);
     tWave.update(true);
     pushMatrix();
-    translate(0,inFreq);
+    translate(0,map(inFreq,targetFreq-100,targetFreq+100,-100,100));
     wave.update();
     popMatrix();
     popMatrix();

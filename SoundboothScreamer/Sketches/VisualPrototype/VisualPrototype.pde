@@ -73,8 +73,8 @@ void setup() {
   tWavePos = new PVector(width/3, height/2);
   panelSize = new PVector(width*0.286, height);
 
-  minFreq = targetFreq-200; //set min and max freq to target frequency from SC
-  maxFreq = targetFreq+200;
+  minFreq = targetFreq-50; //set min and max freq to target frequency from SC
+  maxFreq = targetFreq+50;
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
   hiscore.init(day(),month());
@@ -84,7 +84,7 @@ void draw() {
 
   setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
   // background(EmBlue);
-inFreq = map(sin(millis()*0.001),-1,1,-100,100);
+inFreq = map(sin(millis()*0.001),-1,1,targetFreq-100,targetFreq+100);
 
   timer = (millis()*0.001);
 
