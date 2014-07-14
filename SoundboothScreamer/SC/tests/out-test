@@ -1,0 +1,10 @@
+SynthDef("help-out", { arg out=0, freq=440;
+
+        // write to the bus, adding to previous contents
+        Out.ar(out, SinOsc.ar(440, 0, 0.01));
+
+}).send(s);
+
+
+
+Synth("help-out", [\out, 2]);

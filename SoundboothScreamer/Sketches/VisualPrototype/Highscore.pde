@@ -1,42 +1,38 @@
-JSONArray vals;
+JSONObject highscore;
 Boolean hasHighscore=false;
+int defaultHighscore = 60;
 
 class Highscore{
 
-  void init() {
+  void init(int day, int month) {
+    highscore = loadJSONObject("highscore.json");
+    String dateString = day+"-"+month;
+    String date = highscore.getString("date");
+    // if we're on a new day, reset the highscore to the default
+    if(date.equals(dateString) == false){
+    highscore.setInt("score", defaultHighscore);
+    highscore.setString("date", dateString);
+    saveJSONObject(highscore, "data/highscore.json");
+}
+  currentHiscore = highscore.getInt("score"); // set current highscore from json file
 
-    vals = loadJSONArray("highscore.json");
   }
 
-  void saveHighscore(int pScore, String pName, String pPhone){
-
+  void saveHighscore(int pScore){ //(int pScore, String pName, String pPhone)
     // determine score ranking
-    for (int i = 0; i < vals.size(); i++) {
-
-      if(!hasHighscore){
-        JSONObject highscore = vals.getJSONObject(i);
-
-        int id = highscore.getInt("rank", i);
         int score = highscore.getInt("score");
-        String name = highscore.getString("name");
-        String phone = highscore.getString("phone");
+        // String name = highscore.getString("name");
+        // String phone = highscore.getString("phone");
 
-        if(pScore<score){
+        if(pScore>score){
           hasHighscore = true; // if we reached a high score, we record the info and break out from loop
           highscore.setInt("score", pScore);
-          highscore.setString("name", pName);
-          highscore.setString("phone", pPhone);
-          vals.setJSONObject(i, highscore);
-          print("HIGHSCORE!! --- "+ id + ", " + pName + ", " + pPhone + ", " + pScore);
-        }else{
-        println(id + ", " + name + ", " + phone + ", " + score);
-      }
-      }
+          // highscore.setString("name", pName);
+          // highscore.setString("phone", pPhone);
+          print("HIGHSCORE!!  "+ pScore);
+          }else{
+            println( " :( ");
+          }
+      saveJSONObject(highscore, "data/highscore.json");
     }
-    saveJSONArray(vals, "data/highscore.json");
-
   }
-
-
-
-}

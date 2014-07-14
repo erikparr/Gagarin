@@ -33,7 +33,7 @@ class Panel {
     pushStyle();
     textAlign(CENTER);
     fill(205);
-    textSize(62);
+    textSize(64);
     text(subTitle, width/2, height/2 - (height/5));
     textSize(136);
     text(title, width/2, height/2);
@@ -56,10 +56,15 @@ class Panel {
 
 
   void wavePanel(){
+    pushStyle();
+    strokeWeight(2.5);  // Thicker
     pushMatrix();
     translate(0, height/2);
-    tWave.update(false);
+    tWave.update(true);
+    pushMatrix();
+    translate(0,inFreq);
     wave.update();
+    popMatrix();
     popMatrix();
     fill(EmSilver);
     textSize(42);
@@ -69,7 +74,7 @@ class Panel {
     textSize(92);
     text(" sec", width/5.5, (height)-(height/4)+(height/8));
     image(logo,width -(width/4), (height)-(height/4)+(height/10));
-
+    popStyle();
   }
 
   void waveWindow(Boolean highlight){
@@ -117,41 +122,14 @@ class Panel {
   // rect(px,py,wd,ht);
   //
   // }
-  void setGradient(float pX, float pY, float w, float h, color c1, color c2 ) {
-
-    noFill();
-    int x = (int)pX;
-    int y = (int)pX;
-    for (int i = y; i <= y+h; i++) {
-      float inter = map(i, y, y+h, 0, 1);
-      color c = lerpColor(c1, c2, inter);
-      stroke(c);
-      strokeWeight(1);
-      line(x, i, x+w, i);
-      if(i%(height/20)==0){
-        if(i%(height/5)==0)
-        strokeWeight(2.0);
-        else if(i%(height/10)==0)
-        strokeWeight(1.0);
-        else
-        strokeWeight(0.5);
-        stroke(0);
-        line(x+(w/2), i, x+w, i);
-      }
-      if(i==height/2){
-        strokeWeight(10.0);
-        stroke(0);
-        line(x+(w/2), i, x+w, i);
-      }
-    }
-
-  }
 
   void drawTimerPanel(float currentTime){
     pushStyle();
-    noFill();
+    noStroke();
     float offset = (1.5*PI);
-    fill(EmGrey);
+    fill(EmLiteBlue);
+    ellipse(0,0,225,225);
+    fill(255);
     arc(0,0, 225, 225, 0+offset, map(currentTime, 90, 0,(2*PI)+offset, 0+offset), PIE);
     fill(EmBlueGrad);
     ellipse(0,0,100,100);

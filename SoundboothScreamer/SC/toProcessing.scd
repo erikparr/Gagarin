@@ -1,6 +1,7 @@
 s.options.sampleRate = 48000;
-Server.local.options.device_("MOTU");
+Server.local.options.device_("Scarlett 2i4 USB");
 s.boot
+
 //------------------------------
 // register to receive this message
 (

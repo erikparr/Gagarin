@@ -2,27 +2,30 @@ class IntroScreen{
   // Boolean hlPanel = true;
   // Boolean hlWatch = true;
   // Boolean hlWave = true;
+  float frame1;
+  float frame2;
   Panel panel = new Panel();
 
   void init(){
     panel.init();
+    frame1 = 0;
+    frame2 = startTime-5;
   }
 
   void update(){
-if(timer>0 && timer<startTime-5){
-  panel.textTitles("Welcome to the", "ScreamOmeter");
-}
-if(timer>startTime-5 && timer<startTime){
-  panel.textTitles("Try to beat the high score", "32 sec");
-}
-pushMatrix();
-translate(width/2, height- height/4);
-  panel.drawTimerPanel(map(mouseX,0,width,0,90));
-  popMatrix();
+    if(timer>frame1 && timer<frame2){
+      panel.textTitles("Welcome to the ScreamOmeter", "Show your energy!");
+    }
+    if(timer>frame2 && timer<startTime){
+      panel.textTitles("Try to beat the high score", currentHiscore+" sec");
+      pushMatrix();
+      translate(width/2, height- height/4);
+      panel.drawTimerPanel(lerp(0,currentHiscore, min(1.0,(millis()*0.001)-frame2)));
+      popMatrix();
+    }
 
   }
 
-  //
   // void update(){
   //   pushMatrix();
   //   background(EmGrey);
@@ -138,10 +141,10 @@ translate(width/2, height- height/4);
         return false;
       }
     }
-  //
-  //   // void waveformIntro(){
-  //   //
-  //   //   tWave.update();
-  //   // }
-  //   //return intro duration in seconds
+    //
+    //   // void waveformIntro(){
+    //   //
+    //   //   tWave.update();
+    //   // }
+    //   //return intro duration in seconds
   }

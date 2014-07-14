@@ -9,24 +9,35 @@ class TargetWave {
   boolean lockFreq = false;
   int tStamp=0;
   int tCount=0;
+  PShape line;
 
   void init(){
     wavetable = new float[width];
+    line = createShape();
+    line.beginShape();
+    line.noFill();
+    line.stroke(255);
+    for(int i=0; i<wavetable.length; i++){
+      line.vertex(i,i,0);
+    }
+    line.endShape();
+
   }
 
   void update(Boolean active){
     pushMatrix();
 
     // stroke(255, 235, 22);
-    stroke(EmRed);
+    stroke(255);
     updateSinewave();
     updateTimer();
+    strokeWeight(2.5);
     // draw the waveforms so we can see what we are monitoring
-    strokeWeight(2.5);  // Thicker
-    for(int i = 0; i < wavetable.length - 1; i++)
+    for(int i = 0; i < wavetable.length; i++)
     {
-      line( i, wavetable[i]*yScaler*0.42, i+step, wavetable[i]*yScaler*0.42 );
+      line.setVertex( i,  i, wavetable[i]*yScaler*0.42 );
     }
+shape(line,0,0);
 
     noFill();
     strokeWeight(0.5);
@@ -63,10 +74,11 @@ class TargetWave {
     float getInputFreq(){
       return inFreq;
     }
+
     void updateSinewave(){
       for(int i = 0; i<wavetable.length-1; i++) {
-        wavetable[i]=sin(count+i*0.027);
-        count=count+0.001;
+        wavetable[i]=sin(count+i*0.01);
+        count=count+0.00025;
         // wavetable[i] = wavetable[i+1];
         // println(wavetable[i]);
 

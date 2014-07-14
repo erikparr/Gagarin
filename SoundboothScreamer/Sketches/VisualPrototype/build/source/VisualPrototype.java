@@ -7,7 +7,6 @@ import ddf.minim.*;
 import ddf.minim.ugens.*; 
 import oscP5.*; 
 import netP5.*; 
-import processing.video.*; 
 
 import java.util.HashMap; 
 import java.util.ArrayList; 
@@ -29,11 +28,11 @@ integrate with osc input from SC app:
 
 
 
-
 OscP5 oscP5;
 PFont font;
 IntroScreen intro = new IntroScreen();
 OutroScreen outro = new OutroScreen();
+Highscore hiscore = new Highscore();
 public Panel panel = new Panel();
 public Waveform wave = new Waveform();
 public TargetWave tWave = new TargetWave();
@@ -47,6 +46,7 @@ public int EmBlue =  color(12,71,157);
 public int EmBlueGrad =  color(6,117,190);
 public int EmCyan =  color(0,163,224);
 public int EmBlue1 =  color(12,71,157,168);
+public int EmLiteBlue =  color(196,222,243);
 public int EmGrey =  color(90,90,90);
 public int EmSea =  color(0,112,150);
 public int EmSilver =  color(181,181,181);
@@ -64,7 +64,8 @@ public PVector tWavePos;
 public PVector panelSize;
 public float minFreq;
 public float maxFreq;
-public int startTime;
+public float startTime;
+public int currentHiscore;
 float inFreq; // replace with real input from osc
 int initTime;
 
@@ -75,16 +76,17 @@ public boolean sketchFullScreen() {
 public void setup() {
   size(1366, 768, P2D); // 1600 x 900
   // font = createFont("GillSans", 48);
-  font = createFont("EMprintW01-Regular", 136);
+  font = createFont("EMprintW01-Regular", 120);
   startTime = 10;
-  initTime =  (int)(millis()*0.001f)+startTime; //90 seconds
+  initTime =  (int)(millis()*0.001f)+(int)startTime; //90 seconds
+  minim = new Minim(this);
+  in = minim.getLineIn();
   intro.init();
   outro.init();
   tWave.init();
+  wave.init();
   textFont(font);
   textAlign(CENTER, CENTER);
-  minim = new Minim(this);
-  in = minim.getLineIn();
 
   /* start oscP5, listening for incoming messages at port 47110 */
   oscP5 = new OscP5(this,47110);
@@ -96,11 +98,14 @@ public void setup() {
   maxFreq = targetFreq+200;
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
+  hiscore.init(day(),month());
 }
 
 public void draw() {
 
   setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
+  // background(EmBlue);
+inFreq = map(sin(millis()*0.001f),-1,1,-100,100);
 
   timer = (millis()*0.001f);
 
@@ -112,35 +117,11 @@ public void draw() {
     }
     // if(timer<0)
     // outro.update();
+// text(frameRate,100,100);
+text(frameRate,100,100);
 
   }
 
-  public void updateElements(){
-
-    background(0);
-    // panel.updateWindow(panelSize.x, panelSize.y, false);
-
-    pushMatrix();
-    // panel.drawTimerPanel(timer, false);
-    // popMatrix();
-
-    // pushMatrix();
-    // translate(tWavePos.x,tWavePos.y-height*0.39);
-    // panel.waveWindow(false);
-    // popMatrix();
-
-    // pushMatrix();
-    // translate(tWavePos.x,tWavePos.y);
-    // pushMatrix();
-    // translate(0,-height*0.39);
-    // panel.waveWindow(false);
-    // popMatrix();
-    panel.wavePanel();
-    popMatrix();
-
-
-
-  }
 
 public void setGradient(int x, int y, float w, float h, int c1, int c2, int axis ) {
 
@@ -150,8 +131,6 @@ public void setGradient(int x, int y, float w, float h, int c1, int c2, int axis
       float inter = map(i, x, x+w, 0, 1);
       int c = lerpColor(c1, c2, inter);
       stroke(c);
-      if(i==w/2)
-      println(red(c)+" "+green(c)+" "+blue(c));
       line(i, y, i, y+h);
     }
 }
@@ -163,108 +142,72 @@ public void setGradient(int x, int y, float w, float h, int c1, int c2, int axis
     inFreq = theOscMessage.get(1).floatValue();
     // waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
   }
-
-class CamGrab{
-
-Capture cam;
-
-public void init() {
-
-  String[] cameras = Capture.list();
-
-  if (cameras.length == 0) {
-    println("There are no cameras available for capture.");
-    exit();
-  } else {
-    println("Available cameras:");
-    for (int i = 0; i < cameras.length; i++) {
-      println(cameras[i]);
-    }
-
-    // The camera can be initialized directly using an
-    // element from the array returned by list():
-    cam = new Capture(VisualPrototype.this, cameras[0]);
-    cam.start();
-  }
-}
-
-public void update() {
-  if (cam.available() == true) {
-    cam.read();
-  }
-  image(cam, 0, 200,300,300);
-  // The following does the same, and is faster when just drawing the image
-  // without any additional resizing, transformations, or tint.
-  //set(0, 0, cam);
-}
-}
-JSONArray vals;
+JSONObject highscore;
 Boolean hasHighscore=false;
+int defaultHighscore = 60;
 
 class Highscore{
 
-  public void init() {
+  public void init(int day, int month) {
+    highscore = loadJSONObject("highscore.json");
+    String dateString = day+"-"+month;
+    String date = highscore.getString("date");
+    // if we're on a new day, reset the highscore to the default
+    if(date.equals(dateString) == false){
+    highscore.setInt("score", defaultHighscore);
+    highscore.setString("date", dateString);
+    saveJSONObject(highscore, "data/highscore.json");
+}
+  currentHiscore = highscore.getInt("score"); // set current highscore from json file
 
-    vals = loadJSONArray("highscore.json");
   }
 
-  public void saveHighscore(int pScore, String pName, String pPhone){
-
+  public void saveHighscore(int pScore){ //(int pScore, String pName, String pPhone)
     // determine score ranking
-    for (int i = 0; i < vals.size(); i++) {
-
-      if(!hasHighscore){
-        JSONObject highscore = vals.getJSONObject(i);
-
-        int id = highscore.getInt("rank", i);
         int score = highscore.getInt("score");
-        String name = highscore.getString("name");
-        String phone = highscore.getString("phone");
+        // String name = highscore.getString("name");
+        // String phone = highscore.getString("phone");
 
-        if(pScore<score){
+        if(pScore>score){
           hasHighscore = true; // if we reached a high score, we record the info and break out from loop
           highscore.setInt("score", pScore);
-          highscore.setString("name", pName);
-          highscore.setString("phone", pPhone);
-          vals.setJSONObject(i, highscore);
-          print("HIGHSCORE!! --- "+ id + ", " + pName + ", " + pPhone + ", " + pScore);
-        }else{
-        println(id + ", " + name + ", " + phone + ", " + score);
-      }
-      }
+          // highscore.setString("name", pName);
+          // highscore.setString("phone", pPhone);
+          print("HIGHSCORE!!  "+ pScore);
+          }else{
+            println( " :( ");
+          }
+      saveJSONObject(highscore, "data/highscore.json");
     }
-    saveJSONArray(vals, "data/highscore.json");
-
   }
-
-
-
-}
 class IntroScreen{
   // Boolean hlPanel = true;
   // Boolean hlWatch = true;
   // Boolean hlWave = true;
+  float frame1;
+  float frame2;
   Panel panel = new Panel();
 
   public void init(){
     panel.init();
+    frame1 = 0;
+    frame2 = startTime-5;
   }
 
   public void update(){
-if(timer>0 && timer<startTime-5){
-  panel.textTitles("Welcome to the", "ScreamOmeter");
-}
-if(timer>startTime-5 && timer<startTime){
-  panel.textTitles("Try to beat the high score", "32 sec");
-}
-pushMatrix();
-translate(width/2, height- height/4);
-  panel.drawTimerPanel(map(mouseX,0,width,0,90));
-  popMatrix();
+    if(timer>frame1 && timer<frame2){
+      panel.textTitles("Welcome to the ScreamOmeter", "Show your energy!");
+    }
+    if(timer>frame2 && timer<startTime){
+      panel.textTitles("Try to beat the high score", currentHiscore+" sec");
+      pushMatrix();
+      translate(width/2, height- height/4);
+      panel.drawTimerPanel(lerp(0,currentHiscore, min(1.0f,(millis()*0.001f)-frame2)));
+      popMatrix();
+    }
 
   }
 
-  //
   // void update(){
   //   pushMatrix();
   //   background(EmGrey);
@@ -380,12 +323,12 @@ translate(width/2, height- height/4);
         return false;
       }
     }
-  //
-  //   // void waveformIntro(){
-  //   //
-  //   //   tWave.update();
-  //   // }
-  //   //return intro duration in seconds
+    //
+    //   // void waveformIntro(){
+    //   //
+    //   //   tWave.update();
+    //   // }
+    //   //return intro duration in seconds
   }
 class LoudnessMonitor {
 
@@ -543,7 +486,7 @@ class Panel {
     pushStyle();
     textAlign(CENTER);
     fill(205);
-    textSize(62);
+    textSize(64);
     text(subTitle, width/2, height/2 - (height/5));
     textSize(136);
     text(title, width/2, height/2);
@@ -566,10 +509,15 @@ class Panel {
 
 
   public void wavePanel(){
+    pushStyle();
+    strokeWeight(2.5f);  // Thicker
     pushMatrix();
     translate(0, height/2);
-    tWave.update(false);
+    tWave.update(true);
+    pushMatrix();
+    translate(0,inFreq);
     wave.update();
+    popMatrix();
     popMatrix();
     fill(EmSilver);
     textSize(42);
@@ -579,7 +527,7 @@ class Panel {
     textSize(92);
     text(" sec", width/5.5f, (height)-(height/4)+(height/8));
     image(logo,width -(width/4), (height)-(height/4)+(height/10));
-
+    popStyle();
   }
 
   public void waveWindow(Boolean highlight){
@@ -627,41 +575,14 @@ class Panel {
   // rect(px,py,wd,ht);
   //
   // }
-  public void setGradient(float pX, float pY, float w, float h, int c1, int c2 ) {
-
-    noFill();
-    int x = (int)pX;
-    int y = (int)pX;
-    for (int i = y; i <= y+h; i++) {
-      float inter = map(i, y, y+h, 0, 1);
-      int c = lerpColor(c1, c2, inter);
-      stroke(c);
-      strokeWeight(1);
-      line(x, i, x+w, i);
-      if(i%(height/20)==0){
-        if(i%(height/5)==0)
-        strokeWeight(2.0f);
-        else if(i%(height/10)==0)
-        strokeWeight(1.0f);
-        else
-        strokeWeight(0.5f);
-        stroke(0);
-        line(x+(w/2), i, x+w, i);
-      }
-      if(i==height/2){
-        strokeWeight(10.0f);
-        stroke(0);
-        line(x+(w/2), i, x+w, i);
-      }
-    }
-
-  }
 
   public void drawTimerPanel(float currentTime){
     pushStyle();
-    noFill();
+    noStroke();
     float offset = (1.5f*PI);
-    fill(EmGrey);
+    fill(EmLiteBlue);
+    ellipse(0,0,225,225);
+    fill(255);
     arc(0,0, 225, 225, 0+offset, map(currentTime, 90, 0,(2*PI)+offset, 0+offset), PIE);
     fill(EmBlueGrad);
     ellipse(0,0,100,100);
@@ -679,24 +600,35 @@ class TargetWave {
   boolean lockFreq = false;
   int tStamp=0;
   int tCount=0;
+  PShape line;
 
   public void init(){
     wavetable = new float[width];
+    line = createShape();
+    line.beginShape();
+    line.noFill();
+    line.stroke(255);
+    for(int i=0; i<wavetable.length; i++){
+      line.vertex(i,i,0);
+    }
+    line.endShape();
+
   }
 
   public void update(Boolean active){
     pushMatrix();
 
     // stroke(255, 235, 22);
-    stroke(EmRed);
+    stroke(255);
     updateSinewave();
     updateTimer();
+    strokeWeight(2.5f);
     // draw the waveforms so we can see what we are monitoring
-    strokeWeight(2.5f);  // Thicker
-    for(int i = 0; i < wavetable.length - 1; i++)
+    for(int i = 0; i < wavetable.length; i++)
     {
-      line( i, wavetable[i]*yScaler*0.42f, i+step, wavetable[i]*yScaler*0.42f );
+      line.setVertex( i,  i, wavetable[i]*yScaler*0.42f );
     }
+shape(line,0,0);
 
     noFill();
     strokeWeight(0.5f);
@@ -733,10 +665,11 @@ class TargetWave {
     public float getInputFreq(){
       return inFreq;
     }
+
     public void updateSinewave(){
       for(int i = 0; i<wavetable.length-1; i++) {
-        wavetable[i]=sin(count+i*0.027f);
-        count=count+0.001f;
+        wavetable[i]=sin(count+i*0.01f);
+        count=count+0.00025f;
         // wavetable[i] = wavetable[i+1];
         // println(wavetable[i]);
 
@@ -749,20 +682,33 @@ class TargetWave {
 
    float  py;
    int yScaler = 100; // scale the height of the waves being drawn
-   float step = 2.666f;
+   float step = 10;
+   PShape line;
+
+   public void init(){
+     line = createShape();
+     line.beginShape();
+     line.noFill();
+     line.stroke(EmYellow);
+     for(int i=0; i<in.bufferSize()*0.15f; i++){
+       line.vertex(i,i,0);
+     }
+    //  println(line.getVertexCount());
+     line.endShape();
+   }
 
    public void update()
    {
      noFill();
      // stroke(0, 255,208);
-     stroke(EmBlue);
+     strokeWeight(2.5f);
      // draw the waveforms so we can see what we are monitoring
-     strokeWeight(2.5f);  // Thicker
-     for(int i = 0; i < (in.bufferSize()*0.5f)-1; i++){
-       line((i*step), in.left.get(i)*yScaler, (i*step)+(step/2), py+in.left.get(i+1)*yScaler );
+     for(int i = 0; i < line.getVertexCount(); i++){
+// line((i*step), in.left.get(i)*yScaler, (i*step)+(step/2), py+in.left.get(i+1)*yScaler );
+    line.setVertex(i, (i*step), in.left.get(i)*yScaler);
      }
+shape(line,0,0);
    }
-
  }
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "VisualPrototype" };

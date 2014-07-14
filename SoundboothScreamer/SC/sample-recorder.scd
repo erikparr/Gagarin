@@ -81,7 +81,7 @@
 				});
 				count = count + 1;
 			});
-			// "total run: ".post; total.postln; "start index: ".post; sIndex.postln; "end index: ".post; eIndex.postln; "i:".post; i.postln;(freqs[i]-freqs[min(i+count, range)]).abs.postln; "---".postln;
+			"total run: ".post; total.postln; "start index: ".post; sIndex.postln; "end index: ".post; eIndex.postln; "i:".post; i.postln;(freqs[i]-freqs[min(i+count, range)]).abs.postln; "---".postln;
 			startFreq = freqs[sIndex]; endFreq = freqs[eIndex];
 			refFreq = startFreq*0.5;
 			if(i==range,{
@@ -108,23 +108,23 @@
 	// });
 	// win.front;
 	//-----TouchOSC setup------------------------------------------
-	adrs = NetAddr("192.168.2.2", 57120); // the url should be the one of computer of app 2 (or nil)
+	adrs = NetAddr("localhost", 57120); // the url should be the one of computer of app 2 (or nil)
 	oscRecord = OSCFunc({ arg msg, time, addr, recvPort;
-		// [msg, time, addr, recvPort].postln;
+		[msg, time, addr, recvPort].postln;
 		if(msg[1]==1,
 			{onStart.value; "recording...".postln},
 			{onStop.value; "stopped recording".postln; analyzeFreq.play; });
 		adrs }, '/1/toggle1');
 
 	oscAnalyze = OSCFunc({ arg msg, time, addr, recvPort;
-		// [msg, time, addr, recvPort].postln;
+		[msg, time, addr, recvPort].postln; "msg: ".post;
+		msg[1].postln;
 		if(msg[1]==1,
-			{getFreqRange.play;}, // notice this is .PLAY instead of .value!!!!
+			{"getting freq range".postln;getFreqRange.play;}, // notice this is .PLAY instead of .value!!!!
 			{
 
 				// {freqs.plot("Resonant freq: "+killFreq+" start: "+startFreq+" end: "+endFreq,discrete: true)}.defer;
 				//------------------------------
-
 				toP5osc = OSCresponderNode(s.addr,'/tr',{ arg time, responder, msg;
 					// [time,responder,msg].postln;
 					msg[3].postln;
@@ -137,7 +137,8 @@
 		adrs }, '/1/toggle2');
 
 	oscKill = OSCFunc({ arg msg, time, addr, recvPort;
-		// [msg, time, addr, recvPort].postln;
+		[msg, time, addr, recvPort].postln;
+		msg[1].postln;
 		if(msg[1]==1,
 			playTrig = OSCresponderNode(s.addr,'/tr',{ arg time, responder, msg;
 				msg[3].postln;
@@ -179,19 +180,22 @@ SynthDef("deathByAudio",{arg sFreq, eFreq;
 	env = Env([0,1,1,0],[0.2,5,0.5], 'sin');
 	rate = 0.2;
 	// sweep = Line.kr(sFreq, eFreq,10);
-	sweep = SinOsc.ar(((sFreq+eFreq)/2)+SinOsc.ar(rate));
+	sweep = SinOsc.ar(((sFreq+eFreq)/2)+SinOsc.ar(rate))*0.15;
+	// sweep = SinOsc.ar(520+SinOsc.ar(rate))*0.5;
 	// sweep = SinOsc.ar(561+SinOsc.ar(rate));
 	// SendTrig.kr(Impulse.kr(10),0,sweep);
 	// SendTrig.kr(Impulse.kr(10),0,(SinOsc.kr(((sFreq+eFreq)/2)+SinOsc.kr(rate))));
-	Out.ar(2,sweep * 2.5 * EnvGen.kr(env, doneAction:2));
+	Out.ar(0,Limiter.ar(LPF.ar(HPF.ar(sweep,400),1000), 0.5, 0.01)); //* EnvGen.kr(env, doneAction:2));
 	// Out.ar(2,SinOsc.ar(sweep) * 2.0);
 	// Out.ar(2,(SinOsc.ar(freq+(0.5*(SinOsc.ar(0.3)))) * 2.0));
 	// Out.ar(2,(SinOsc.ar(freq+(SinOsc.ar(0.2)))) * 2.0);
 	// Out.ar(2,SinOsc.ar(freq) * 2.0);
 }).send(s);
 
+Synth("deathByAudio", [\sFreq, 520, \eFreq, 510]);
+
 SynthDef("referenceTone", {arg freq;
-	Out.ar(3, SinOsc.ar(freq)*0.0025);
+	Out.ar(1, SinOsc.ar(freq)*0.0025);
 }).load(s);
 
 
@@ -199,7 +203,7 @@ SynthDef("referenceTone", {arg freq;
 //record
 
 SynthDef("soundIn", {
-	Out.ar(0, SoundIn.ar(0));
+	Out.ar(8, SoundIn.ar(0));
 }).send(s);
 
 // this will record to the disk
@@ -209,7 +213,7 @@ SynthDef("recToDisk", {arg bufnum;
 
 //basic mic out to monitor synth
 SynthDef("in", { arg out=0, in=0;
-	Out.ar(3, SoundIn.ar(1)*0.2);
+	Out.ar(9, SoundIn.ar(1)*0.2);
 }).play(s);
 
-//s.reboot
+//s.rebootq

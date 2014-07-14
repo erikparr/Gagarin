@@ -6,12 +6,12 @@ import ddf.minim.*; // audio library -- used for audio visualization only
 import ddf.minim.ugens.*;
 import oscP5.*;
 import netP5.*;
-import processing.video.*;
 
 OscP5 oscP5;
 PFont font;
 IntroScreen intro = new IntroScreen();
 OutroScreen outro = new OutroScreen();
+Highscore hiscore = new Highscore();
 public Panel panel = new Panel();
 public Waveform wave = new Waveform();
 public TargetWave tWave = new TargetWave();
@@ -25,6 +25,7 @@ public color EmBlue =  color(12,71,157);
 public color EmBlueGrad =  color(6,117,190);
 public color EmCyan =  color(0,163,224);
 public color EmBlue1 =  color(12,71,157,168);
+public color EmLiteBlue =  color(196,222,243);
 public color EmGrey =  color(90,90,90);
 public color EmSea =  color(0,112,150);
 public color EmSilver =  color(181,181,181);
@@ -42,7 +43,8 @@ public PVector tWavePos;
 public PVector panelSize;
 public float minFreq;
 public float maxFreq;
-public int startTime;
+public float startTime;
+public int currentHiscore;
 float inFreq; // replace with real input from osc
 int initTime;
 
@@ -53,16 +55,17 @@ boolean sketchFullScreen() {
 void setup() {
   size(1366, 768, P2D); // 1600 x 900
   // font = createFont("GillSans", 48);
-  font = createFont("EMprintW01-Regular", 136);
+  font = createFont("EMprintW01-Regular", 120);
   startTime = 10;
-  initTime =  (int)(millis()*0.001)+startTime; //90 seconds
+  initTime =  (int)(millis()*0.001)+(int)startTime; //90 seconds
+  minim = new Minim(this);
+  in = minim.getLineIn();
   intro.init();
   outro.init();
   tWave.init();
+  wave.init();
   textFont(font);
   textAlign(CENTER, CENTER);
-  minim = new Minim(this);
-  in = minim.getLineIn();
 
   /* start oscP5, listening for incoming messages at port 47110 */
   oscP5 = new OscP5(this,47110);
@@ -74,11 +77,14 @@ void setup() {
   maxFreq = targetFreq+200;
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
+  hiscore.init(day(),month());
 }
 
 void draw() {
 
   setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
+  // background(EmBlue);
+inFreq = map(sin(millis()*0.001),-1,1,-100,100);
 
   timer = (millis()*0.001);
 
@@ -90,35 +96,11 @@ void draw() {
     }
     // if(timer<0)
     // outro.update();
+// text(frameRate,100,100);
+text(frameRate,100,100);
 
   }
 
-  void updateElements(){
-
-    background(0);
-    // panel.updateWindow(panelSize.x, panelSize.y, false);
-
-    pushMatrix();
-    // panel.drawTimerPanel(timer, false);
-    // popMatrix();
-
-    // pushMatrix();
-    // translate(tWavePos.x,tWavePos.y-height*0.39);
-    // panel.waveWindow(false);
-    // popMatrix();
-
-    // pushMatrix();
-    // translate(tWavePos.x,tWavePos.y);
-    // pushMatrix();
-    // translate(0,-height*0.39);
-    // panel.waveWindow(false);
-    // popMatrix();
-    panel.wavePanel();
-    popMatrix();
-
-
-
-  }
 
 void setGradient(int x, int y, float w, float h, color c1, color c2, int axis ) {
 
@@ -128,8 +110,6 @@ void setGradient(int x, int y, float w, float h, color c1, color c2, int axis ) 
       float inter = map(i, x, x+w, 0, 1);
       color c = lerpColor(c1, c2, inter);
       stroke(c);
-      if(i==w/2)
-      println(red(c)+" "+green(c)+" "+blue(c));
       line(i, y, i, y+h);
     }
 }
