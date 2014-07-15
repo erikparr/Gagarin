@@ -10,7 +10,7 @@
 	//analysis vars
 	analyzeFreq, freqs, freqTrig, bag, dict, target, killFreq, oscAnalyze,rtAnalyze,
 	//get frequency range vars
-	getFreqRange,total, sIndex, eIndex, range, mRange, count, startFreq, endFreq, refFreq,
+	getFreqRange,total, sIndex, eIndex, range, mRange, count, startFreq, endFreq, avgFreq, refFreq,
 	// visualizer vars
 	toP5osc,freqOsc, refTone,
 	//high amplitude glass killing machine vars
@@ -20,7 +20,7 @@
 
 	onStart = 	Routine({
 		"play that glassy shit".postln;
-		play = Synth.new("soundIn"); // dont need this... delete
+		// play = Synth.new("soundIn"); // dont need this... delete
 
 		buf = Buffer.alloc(s, 65536, 1);
 		buf.write("/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff",
@@ -67,7 +67,7 @@
 	});
 	//-----get most stabile frequency range-----------------------
 	getFreqRange = Routine({
-
+		"getting freq range".postln;
 		total=0;//total count
 		sIndex=0;//start index
 		eIndex=0;//end index
@@ -81,13 +81,17 @@
 				});
 				count = count + 1;
 			});
-			"total run: ".post; total.postln; "start index: ".post; sIndex.postln; "end index: ".post; eIndex.postln; "i:".post; i.postln;(freqs[i]-freqs[min(i+count, range)]).abs.postln; "---".postln;
+			// "total run: ".post; total.postln; "start index: ".post; sIndex.postln; "end index: ".post; eIndex.postln; "i:".post; i.postln;(freqs[i]-freqs[min(i+count, range)]).abs.postln; "---".postln;
 			startFreq = freqs[sIndex]; endFreq = freqs[eIndex];
-			refFreq = startFreq*0.5;
+			avgFreq = ((startFreq+endFreq)/2).min(1000).max(400); //keep freqs in safe range for driver output (400-1000 hz)
+			refFreq = avgFreq*0.5;
 			if(i==range,{
 				"startFreq: ".post; startFreq.postln;
-				"endFreq: ".post; endFreq.postln});
-	});});
+				"endFreq: ".post; endFreq.postln;
+				"avgFreq: ".post; avgFreq.postln;
+				"killFreq: ".post; killFreq.postln});
+	});
+});
 
 	//-----button setup-------------------------------------------
 	// win = Window("record", Rect(128, 64, 340, 360));
@@ -113,16 +117,28 @@
 		[msg, time, addr, recvPort].postln;
 		if(msg[1]==1,
 			{onStart.value; "recording...".postln},
-			{onStop.value; "stopped recording".postln; analyzeFreq.play; });
+			{onStop.value; "stopped recording".postln; });
 		adrs }, '/1/toggle1');
 
 	oscAnalyze = OSCFunc({ arg msg, time, addr, recvPort;
 		[msg, time, addr, recvPort].postln; "msg: ".post;
 		msg[1].postln;
 		if(msg[1]==1,
-			{"getting freq range".postln;getFreqRange.play;}, // notice this is .PLAY instead of .value!!!!
-			{
+			{analyzeFreq.play; }, // notice this is .PLAY instead of .value!!!!
+			{ getFreqRange.play});
+		adrs }, '/1/toggle2');
 
+	oscKill = OSCFunc({ arg msg, time, addr, recvPort;
+		[msg, time, addr, recvPort].postln;
+		msg[1].postln;
+		if(msg[1]==1,
+			// playTrig = OSCresponderNode(s.addr,'/tr',{ arg time, responder, msg;
+			// 	// msg[3].postln;
+			// }).add;
+
+			{
+								//send target frequency to Processing
+				~p5Out.sendMsg("/s_new", \target, avgFreq, 1, 0);
 				// {freqs.plot("Resonant freq: "+killFreq+" start: "+startFreq+" end: "+endFreq,discrete: true)}.defer;
 				//------------------------------
 				toP5osc = OSCresponderNode(s.addr,'/tr',{ arg time, responder, msg;
@@ -133,21 +149,14 @@
 
 				refTone = Synth.new("referenceTone", [\freq, refFreq]);
 				freqOsc = Synth.new("pitchFollow1");
-		});
-		adrs }, '/1/toggle2');
 
-	oscKill = OSCFunc({ arg msg, time, addr, recvPort;
-		[msg, time, addr, recvPort].postln;
-		msg[1].postln;
-		if(msg[1]==1,
-			playTrig = OSCresponderNode(s.addr,'/tr',{ arg time, responder, msg;
-				msg[3].postln;
-			}).add;
-
-			{killShot = Synth(\deathByAudio, [\sFreq, startFreq, \eFreq, endFreq]);
 				refTone.free;
-				"killing...".postln},
-			{ killShot.free; "murder death kill!".postln});
+				"killing...".postln; //((startFreq+endFreq)/2).postln;
+			},
+			{
+				killShot = Synth(\deathByAudio, [\freq, avgFreq]);
+				// killShot.free; "murder death kill!".postln
+		});
 		adrs }, '/1/toggle3');
 
 	freeAll = OSCFunc({ arg msg, time, addr, recvPort;
@@ -163,36 +172,36 @@
 
 //o.free;
 //----------synthdefs------------------------------------------------
-
+// Synth(\playback, [\bufnum, ~buf.bufnum]);
 SynthDef("playback", { arg bufnum;
 	var freq, hasFreq, src;
+	//-> src = PlayBuf.ar(1, bufnum, doneAction:2, loop:0);
 	src = PlayBuf.ar(1, bufnum, doneAction:2, loop:0);
 	# freq, hasFreq = Tartini.kr(src,threshold: 0.1);
+	//     SendTrig.kr(Dust.kr(1.0),0,0.9);
 
 	SendTrig.kr(Impulse.kr(100),0,freq);
-	// Out.ar(3, LPF.ar(HPF.ar(src,50),2000));
+	Out.ar(1, src);
 	// Out.ar(3, LPF.ar(HPF.ar(src,50),2000));
 	// Out.ar(3,  LPF.ar(HPF.ar(src,50),2000));
 }).send(s);
+// Synth(\deathByAudio, [\freq, 560]);
 
-SynthDef("deathByAudio",{arg sFreq, eFreq;
+SynthDef("deathByAudio",{arg freq;
 	var sweep, rate, env;
-	env = Env([0,1,1,0],[0.2,5,0.5], 'sin');
+	env = Env([0,1.0,1.0,0],[0.2,5,0.5], 'sin');
 	rate = 0.2;
-	// sweep = Line.kr(sFreq, eFreq,10);
-	sweep = SinOsc.ar(((sFreq+eFreq)/2)+SinOsc.ar(rate))*0.15;
-	// sweep = SinOsc.ar(520+SinOsc.ar(rate))*0.5;
-	// sweep = SinOsc.ar(561+SinOsc.ar(rate));
+	// sweep = SinOsc.ar(freq)+SinOsc.ar(rate))*0.15;
+	sweep = SinOsc.ar(freq);
 	// SendTrig.kr(Impulse.kr(10),0,sweep);
 	// SendTrig.kr(Impulse.kr(10),0,(SinOsc.kr(((sFreq+eFreq)/2)+SinOsc.kr(rate))));
-	Out.ar(0,Limiter.ar(LPF.ar(HPF.ar(sweep,400),1000), 0.5, 0.01)); //* EnvGen.kr(env, doneAction:2));
+	Out.ar(0,Limiter.ar(LPF.ar(HPF.ar(sweep,400),1000), 1.0, 0.01)* EnvGen.kr(env, doneAction:2));
 	// Out.ar(2,SinOsc.ar(sweep) * 2.0);
 	// Out.ar(2,(SinOsc.ar(freq+(0.5*(SinOsc.ar(0.3)))) * 2.0));
 	// Out.ar(2,(SinOsc.ar(freq+(SinOsc.ar(0.2)))) * 2.0);
 	// Out.ar(2,SinOsc.ar(freq) * 2.0);
 }).send(s);
 
-Synth("deathByAudio", [\sFreq, 520, \eFreq, 510]);
 
 SynthDef("referenceTone", {arg freq;
 	Out.ar(1, SinOsc.ar(freq)*0.0025);
@@ -202,18 +211,21 @@ SynthDef("referenceTone", {arg freq;
 //------------------------------
 //record
 
-SynthDef("soundIn", {
-	Out.ar(8, SoundIn.ar(0));
-}).send(s);
+// SynthDef("soundIn", {
+// 	Out.ar(1, SoundIn.ar(8));
+// 	//Out.ar(0, SoundIn.ar(0));
+// }).send(s);
 
 // this will record to the disk
 SynthDef("recToDisk", {arg bufnum;
-	DiskOut.ar(bufnum, In.ar(0,1));
+	DiskOut.ar(bufnum, In.ar(8,1));
+	//DiskOut.ar(bufnum, In.ar(0,1));
 }).send(s);
 
 //basic mic out to monitor synth
 SynthDef("in", { arg out=0, in=0;
-	Out.ar(9, SoundIn.ar(1)*0.2);
+	Out.ar(1, SoundIn.ar(9)*0.2);
+	//Out.ar(0, SoundIn.ar(0)*0.2);
 }).play(s);
 
-//s.rebootq
+//s.reboot
