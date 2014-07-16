@@ -1,6 +1,5 @@
 /*Todo:
-integrate with osc input from SC app:
--
+- difficulty w/ targetThresh
 */
 import ddf.minim.*; // audio library -- used for audio visualization only
 import ddf.minim.ugens.*;
@@ -8,6 +7,10 @@ import oscP5.*;
 import netP5.*;
 
 OscP5 oscP5;
+NetAddress myRemoteLocation;
+int b1Val;
+int b2Val;
+int b3Val;
 PFont font;
 IntroScreen intro = new IntroScreen();
 OutroScreen outro = new OutroScreen();
@@ -19,7 +22,7 @@ public TargetWave tWave = new TargetWave();
 public  Minim minim;
 public  AudioInput in;
 public  float timer;
-public  float targetFreq = 250;
+public  float targetFreq = 0;
 public color EmRed =  color(254,0,12);
 public color EmBlue =  color(12,71,157);
 public color EmBlueGrad =  color(6,117,190);
@@ -45,59 +48,73 @@ public float minFreq;
 public float maxFreq;
 public float startTime;
 public int currentHiscore;
-float inFreq; // replace with real input from osc
+float inFreq; // input frequency from Supercollider
+float freqVal; // mapped inFreq value to screen height range
 int initTime;
+String typetag;
+float targetThresh = 50;
+Boolean hasWon =false; //set to true when game has been won
+Boolean breakGlass =true; //set to true to send osc msg to SC to break glass on win
 
 boolean sketchFullScreen() {
   return true;
 }
 
 void setup() {
-  size(1366, 768, P2D); // 1600 x 900
+  size(1920, 1080, P2D); // 1600 x 900
   // font = createFont("GillSans", 48);
   font = createFont("EMprintW01-Regular", 120);
   startTime = 10;
   initTime =  (int)(millis()*0.001)+(int)startTime; //90 seconds
   minim = new Minim(this);
   in = minim.getLineIn();
+  textFont(font);
+  textAlign(CENTER, CENTER);
+  /*------------init classes ------------*/
   intro.init();
   outro.init();
   tWave.init();
   wave.init();
-  textFont(font);
-  textAlign(CENTER, CENTER);
-
-  /* start oscP5, listening for incoming messages at port 47110 */
+  /*------------OSC ------------*/
   oscP5 = new OscP5(this,47110);
-
+  myRemoteLocation = new NetAddress("127.0.0.1",57120);
+  b1Val = 1;
+  b2Val = 1;
+  b3Val = 1;
+  /*------------other vars --------------------*/
   tWavePos = new PVector(width/3, height/2);
   panelSize = new PVector(width*0.286, height);
 
-  minFreq = targetFreq-50; //set min and max freq to target frequency from SC
-  maxFreq = targetFreq+50;
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
   hiscore.init(day(),month());
 }
 
 void draw() {
-
   setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
   // background(EmBlue);
-inFreq = map(sin(millis()*0.001),-1,1,targetFreq-100,targetFreq+100);
+// inFreq = map(sin(millis()*0.001),-1,1,targetFreq-100,targetFreq+100);
 
   timer = (millis()*0.001);
 
-  if(intro.isActive()){
+  if(intro.isActive() ){
     intro.update();
-    }else{
+    }else if(!hasWon){
       tWave.setInputFreq(inFreq);
       panel.wavePanel();
+    }else{
+      text("you win", 100,100);
+      if(breakGlass){
+      sendOsc("/killTone", 1);
+      breakGlass=false;
     }
-    // if(timer<0)
-    // outro.update();
+    }
+
+//     if(targetFreq>0){
+// text("Target: " + targetFreq,100,100);
+// text(inFreq,100,200);
+// }
 // text(frameRate,100,100);
-text(frameRate,100,100);
 
   }
 
@@ -118,6 +135,60 @@ void setGradient(int x, int y, float w, float h, color c1, color c2, int axis ) 
   void oscEvent(OscMessage theOscMessage) {
     /* print the address pattern and the typetag of the received OscMessage */
     // println(theOscMessage.get(1).floatValue());
-    inFreq = theOscMessage.get(1).floatValue();
+if(theOscMessage.checkAddrPattern("/target")==true) {
+  //get target frequency of glass from SC
+  targetFreq = theOscMessage.get(0).floatValue();
+  minFreq = targetFreq-targetThresh; //set min and max freq to target frequency from SC
+  maxFreq = targetFreq+targetThresh;
+}
+if(theOscMessage.checkAddrPattern("/pitch")==true && targetFreq>0) {
+  // typetag = theOscMessage.typetag();
+   inFreq = theOscMessage.get(0).floatValue(); //
+   freqVal = map(inFreq,0,targetFreq*2,height/3,-height/3);
+  //    print("### received an osc message.");
+  // print(" addrpattern: "+theOscMessage.addrPattern());
+  // println(" typetag: "+theOscMessage.typetag());
+
+  //  println(inFreq);
+}
+  // }
     // waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
   }
+
+void sendOsc(String adrs, int val){
+  OscMessage myMessage = new OscMessage(adrs);
+  myMessage.add(val); /* add an int to the osc message */
+  oscP5.send(myMessage, myRemoteLocation);
+}
+
+  //buttons in booth work like simulated keyboards
+    void keyPressed() {
+
+    if (key == TAB) {
+      println("Tab");
+            sendOsc("/1/toggle1", b1Val);
+            if(b1Val==0)
+              b1Val=1;
+              else
+              b1Val=0;
+    }
+    if (key == 'q') {
+            println("q");
+
+            sendOsc("/1/toggle2", b2Val);
+              if(b2Val==0)
+              b2Val=1;
+              else
+              b2Val=0;
+
+    }
+    if (key == '5') {
+            println("5");
+
+            sendOsc("/1/toggle3", b3Val);
+            if(b3Val==0)
+              b3Val=1;
+              else
+              b3Val=0;
+    }
+}

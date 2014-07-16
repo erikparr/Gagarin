@@ -71,6 +71,8 @@ shape(line,0,0);
 
     void targetCount(){
       tCount = millis()-tStamp;
+      if(tCount>=5000)
+      hasWon = true;
     }
 
     float getInputFreq(){
