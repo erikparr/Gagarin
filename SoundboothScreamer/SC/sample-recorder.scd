@@ -117,7 +117,7 @@
 		}).add;
 
 		refTone = Synth.new("referenceTone", [\freq, targetFreq]);
-		freqOsc = Synth.new("pitchFollow1");
+		freqOsc = Synth.new("pitchFollow");
 
 		refTone.free;
 		"start game".postln;
@@ -208,6 +208,15 @@ SynthDef("deathByAudio",{arg freq;
 
 SynthDef("referenceTone", {arg freq;
 	Out.ar(1, SinOsc.ar(freq)*0.0025);
+}).load(s);
+
+SynthDef("pitchFollow",{
+	var in, amp, freq, hasFreq, out;
+	in = In.ar(9);
+	// amp = Amplitude.kr(in, 0.05, 0.05);
+	# freq, hasFreq = Tartini.kr(in,0.2);
+	SendTrig.kr(Impulse.kr(10),0,freq);
+	// Out.ar(0,(SinOsc.ar(MouseY.kr(560,567.5)) * MouseX.kr(0.0,10)));
 }).load(s);
 
 

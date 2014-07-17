@@ -124,7 +124,7 @@ public void draw() {
       tWave.setInputFreq(inFreq);
       panel.wavePanel();
     }else{
-      text("YOU WIN", width/2,height/2);
+      text("you win", 100,100);
       if(breakGlass){
       sendOsc("/killTone", 1);
       breakGlass=false;

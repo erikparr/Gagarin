@@ -1,5 +1,5 @@
 s.options.sampleRate = 48000;
-Server.local.options.device_("Scarlett 2i4 USB");
+Server.local.options.device_("Komplete Audio 6");
 s.boot
 
 //------------------------------
@@ -22,9 +22,9 @@ r.remove; // don't forget to remove the responder once you're done
 //------------------------------
 //pitch detection
 (
-SynthDef("pitchFollow1",{
+SynthDef("pitchFollow",{
 	var in, amp, freq, hasFreq, out;
-	in = Mix.new(SoundIn.ar(0));
+	in = SoundIn.ar(9);
 	// amp = Amplitude.kr(in, 0.05, 0.05);
 	# freq, hasFreq = Tartini.kr(in,0.2);
 	SendTrig.kr(Impulse.kr(10),0,freq);
