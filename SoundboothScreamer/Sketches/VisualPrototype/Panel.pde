@@ -68,9 +68,9 @@ class Panel {
     popMatrix();
     fill(EmSilver);
     textSize(42);
-    text(" Time left:", width/12, (height)-(height/4));
+    text(" Time:", width/12, (height)-(height/4));
     textSize(136);
-    text((int)timer, width/12, (height)-(height/4)+(height/10));
+    text((int)globalTimer, width/12, (height)-(height/4)+(height/10));
     textSize(92);
     text(" sec", width/5.5, (height)-(height/4)+(height/8));
     image(logo,width -(width/4), (height)-(height/4)+(height/10));

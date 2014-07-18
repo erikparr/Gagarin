@@ -9,6 +9,7 @@ class TargetWave {
   boolean lockFreq = false;
   int tStamp=0;
   int tCount=0;
+  int winTime = 5000;
   PShape line;
 
   void init(){
@@ -47,7 +48,7 @@ shape(line,0,0);
     if(active){
       fill(EmYellow1);
       noStroke();
-      rect(width/2,0,map(tCount, 0, 5000, 0, width),height/7,7);
+      rect(width/2,0,map(tCount, 0, winTime, 0, width),height/7,7);
     }
     popStyle();
     popMatrix();
@@ -71,7 +72,7 @@ shape(line,0,0);
 
     void targetCount(){
       tCount = millis()-tStamp;
-      if(tCount>=5000)
+      if(tCount>=winTime)
       hasWon = true;
     }
 
@@ -89,5 +90,10 @@ shape(line,0,0);
       }
       // wavetable[wavetable.length-1]=sin(millis()*10);
 
+    }
+
+    void reset(){
+       inRange = false;
+       lockFreq = false;
     }
   }

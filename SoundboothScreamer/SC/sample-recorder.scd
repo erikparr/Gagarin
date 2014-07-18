@@ -2,6 +2,11 @@
 ~p5Out = NetAddr("127.0.0.1", 47110);
 // test it with one message:
 ~p5Out.sendMsg("/from_SC", 500);
+	//ins/outs
+	~glassMicIn=8;
+	~voiceMicIn=9;
+	~hornDriverOut=2; // output to driver on soundcard out 3 !
+	~referenceOut=1;
 
 // create a function called recordSample that executes the whole thing
 ~recordSample = {
@@ -12,7 +17,7 @@
 	//get frequency range vars
 	getFreqRange,total, sIndex, eIndex, range, mRange, count, startFreq, endFreq, avgFreq, targetFreq, pitchVal,
 	// visualizer vars
-	toP5osc,freqOsc, refTone, startGame,
+	toP5osc,freqOsc, refTone, startGame, oscRefTone,
 	//high amplitude glass killing machine vars
 	killShot, oscKill, playTrig,breakGlass,
 	//paths
@@ -21,11 +26,9 @@
 
 	onStart = 	Routine({
 		"play that glassy shit".postln;
-		// play = Synth.new("soundIn"); // dont need this... delete
-
 		buf = Buffer.alloc(s, 65536, 1);
 		buf.write(audioFilepath,
-			"aiff", "int16", 0, 0, true);
+		"aiff", "int16", 0, 0, true);
 		// create the diskout node; making sure it comes after the source
 		rec = Synth.tail(nil, "recToDisk", ["bufnum", buf]);
 	});
@@ -105,21 +108,20 @@
 	startGame = Routine({
 		getFreqRange.stop;
 		//send target frequency to Processing
-		"avgFreq: ".post; avgFreq.postln;
 		~p5Out.sendMsg( "/target", targetFreq.asFloat);
 		// {freqs.plot("Resonant freq: "+killFreq+" start: "+startFreq+" end: "+endFreq,discrete: true)}.defer;
 		//------------------------------
 		toP5osc = OSCresponderNode(s.addr,'/tr',{ arg time, responder, msg;
 			// [time,responder,msg].postln;
 			pitchVal = (msg[3]).min(500).max(60);
+			pitchVal.postln;
 			~p5Out.sendMsg("/pitch", pitchVal);
 			// ~p5Out.sendMsg("/pitch", "pitch", 1, 0);
 		}).add;
 
-		refTone = Synth.new("referenceTone", [\freq, targetFreq]);
 		freqOsc = Synth.new("pitchFollow");
 
-		refTone.free;
+		// refTone.free;
 		"start game".postln;
 	});
 	//-- play the game via Processing----
@@ -129,7 +131,8 @@
 				"killing...".postln; //((startFreq+endFreq)/2).postln;
 		5.1.wait;
 				killShot.free; "killed.".postln;
-analyzeFreq.reset; onStart.reset; onStop.reset;
+analyzeFreq.reset;
+		onStart.reset; onStop.reset;
 				"resetting...".postln;
 		1.wait;
 		refTone.free; freqOsc.free; toP5osc.free; playTrig.free; killShot.free; oscRecord.free; oscAnalyze.free;
@@ -148,10 +151,14 @@ analyzeFreq.reset; onStart.reset; onStop.reset;
 	oscAnalyze = OSCFunc({ arg msg, time, addr, recvPort;
 		// [msg, time, addr, recvPort].postln; "msg: ".post;
 		// msg[1].postln;
-		if(msg[1]==1,
-			{startGame.play }, // notice this is .PLAY instead of .value!!!!
-			{ "game already started".postln;});
-		adrs }, '/1/toggle2');
+			startGame.play; "starting game...".postln; // notice this is .PLAY instead of .value!!!!
+		adrs }, '/oscGameStart');
+	//-- get reference tone
+	oscRefTone = OSCFunc({ arg msg, time, addr, recvPort;
+		// [msg, time, addr, recvPort].postln; "msg: ".post;
+		// msg[1].postln;
+		refTone = Synth.new("referenceTone", [\freq, targetFreq]);
+		adrs }, '/oscRefTone');
 
 	oscKill = OSCFunc({ arg msg, time, addr, recvPort;
 		// [msg, time, addr, recvPort].postln;
@@ -189,49 +196,51 @@ analyzeFreq.reset; onStart.reset; onStop.reset;
 SynthDef("playback", { arg bufnum;
 	var freq, hasFreq, src;
 	//-> src = PlayBuf.ar(1, bufnum, doneAction:2, loop:0);
-	src = PlayBuf.ar(1, bufnum, doneAction:2, loop:0);
+	src = PlayBuf.ar(~referenceOut, bufnum, doneAction:2, loop:0);
 	# freq, hasFreq = Tartini.kr(src,threshold: 0.1);
 	SendTrig.kr(Impulse.kr(100),0,freq);
-	Out.ar(1, src);
+	Out.ar(~referenceOut, src);
 }).send(s);
-// Synth(\deathByAudio, [\freq, 560]);
 
 SynthDef("deathByAudio",{arg freq;
-	var sweep, rate, env;
-	env = Env([0,1.0,1.0,0],[0.2,5,0.5], 'sin');
+	var sweep, rate, env, amp;
+	env = Env([0,1.0,1.0,0],[0.2,2,0.5], 'sin');
 	rate = 0.2;
+	amp = 0.12;
 	// sweep = SinOsc.ar(freq)+SinOsc.ar(rate))*0.15;
-	sweep = SinOsc.ar(freq);
-	Out.ar(0,Limiter.ar(LPF.ar(HPF.ar(sweep,400),1000), 1.0, 0.01)*EnvGen.kr(env, doneAction:2));
+	sweep = SinOsc.ar(freq)*amp;
+	Out.ar(~hornDriverOut,Limiter.ar(sweep, amp, 0.01)*EnvGen.kr(env, doneAction:2));
 }).send(s);
 
 
 SynthDef("referenceTone", {arg freq;
-	Out.ar(1, SinOsc.ar(freq)*0.0025);
+	var env;
+		env = Env([0,1.0,1.0,0],[0.2,5,0.5], 'sin');
+	Out.ar(~referenceOut, SinOsc.ar(freq)*0.025*EnvGen.kr(env, doneAction:2))
 }).load(s);
 
 SynthDef("pitchFollow",{
 	var in, amp, freq, hasFreq, out;
-	in = In.ar(9);
+	in = In.ar(~glassMicIn);
 	// amp = Amplitude.kr(in, 0.05, 0.05);
 	# freq, hasFreq = Tartini.kr(in,0.2);
 	SendTrig.kr(Impulse.kr(10),0,freq);
 	// Out.ar(0,(SinOsc.ar(MouseY.kr(560,567.5)) * MouseX.kr(0.0,10)));
 }).load(s);
 
-
+// Synth(\deathByAudio, [\freq, 546.9]);
 //------------------------------
 //record
 
 // this will record to the disk
 SynthDef("recToDisk", {arg bufnum;
-	DiskOut.ar(bufnum, In.ar(8,1));
+	DiskOut.ar(bufnum, In.ar(~glassMicIn));
 	//DiskOut.ar(bufnum, In.ar(0,1));
 }).send(s);
 
 //basic mic out to monitor synth
 SynthDef("in", { arg out=0, in=0;
-	Out.ar(1, SoundIn.ar(9)*0.2);
+	Out.ar(~referenceOut, SoundIn.ar(~voiceMicIn)*0.2);
 	//Out.ar(0, SoundIn.ar(0)*0.2);
 }).play(s);
 

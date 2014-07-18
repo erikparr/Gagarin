@@ -2,7 +2,7 @@
 
    float  py;
    int yScaler = 100; // scale the height of the waves being drawn
-   float step = 10;
+   float step = 13;
    PShape line;
 
    void init(){
