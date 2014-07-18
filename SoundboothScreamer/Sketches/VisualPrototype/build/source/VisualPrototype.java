@@ -67,19 +67,22 @@ public PVector tWavePos;
 public PVector panelSize;
 public float minFreq;
 public float maxFreq;
-public float startTime;
 public int currentHiscore;
-public float globalTimer;
-float tStampPlay;
-float inFreq; // input frequency from Supercollider
+public float playTimer;
+public float tStampPlay;
+public float outroTimer;
+public float tStampOutro;
+public float inFreq; // input frequency from Supercollider
 float freqVal; // mapped inFreq value to screen height range
 String typetag;
 float targetThresh = 50;
 Boolean hasWon =false; //set to true when game has been won
-Boolean hasLost =false; //set to true when game has been won
 Boolean breakGlass =true; //set to true to send osc msg to SC to break glass on win
-public Boolean startSound = false;
-boolean pressedOnce = true;
+public Boolean startSound ;
+public Boolean playIntro;
+public Boolean playGame;
+public Boolean playOutro;
+float gameDuration = 5;
 
 public boolean sketchFullScreen() {
   return true;
@@ -89,11 +92,10 @@ public void setup() {
   size(1920,1080, P2D); // 1600 x 900
   noCursor();
   // font = createFont("GillSans", 48);
-  font = createFont("EMprintW01-Regular", 120);
-  startTime = 10;
+  font = createFont("EMprintW01-Regular", 115);
   minim = new Minim(this);
   in = minim.getLineIn();
-    player = minim.loadFile("applause.aiff");
+  player = minim.loadFile("applause.aiff");
   textFont(font);
   textAlign(CENTER, CENTER);
   /*------------init classes ------------*/
@@ -110,187 +112,195 @@ public void setup() {
   /*------------other vars --------------------*/
   tWavePos = new PVector(width/3, height/2);
   panelSize = new PVector(width*0.286f, height);
-
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
   hiscore.init(day(),month());
+  resetGame();
 }
 
 public void draw() {
   setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
   // background(EmBlue);
-  // inFreq = map(sin(millis()*0.001),-1,1,targetFreq-100,targetFreq+100);
 
-
-  if(intro.isActive() ){
+  if(playIntro){
     intro.update();
-    }else if(intro.isFinished() && !hasWon && !hasLost){
-      tWave.setInputFreq(inFreq);
+    }else if(playGame){
       panel.wavePanel();
-      }else if(hasWon){
-        if(currentHiscore<globalTimer){
-        text("You Win!", width/3,height/3);
+      playTimer = (millis()-tStampPlay)*0.001f;
+      }else if(playOutro){
+        outro();
         }else{
-        text(globalTimer +" SECONDS: NEW HIGH SCORE!", width/3,height/3);
-        hiscore.saveHighscore((int)globalTimer);
-          player.play();
+          text("Press Start", width/3,height/2);
+        }
+
+        if(startSound)
+        oscStart();
+        if(playTimer>=gameDuration && playGame){
+          //player has ran out of time, gameover
+          playOutro=true;
+          playGame=false;
+          tStampOutro=millis();
+        }
       }
-        if(breakGlass){
-          sendOsc("/killTone", 1);
-          breakGlass=false;
+
+
+      public void setGradient(int x, int y, float w, float h, int c1, int c2, int axis ) {
+
+        noFill();
+
+        for (int i = x; i <= x+w; i++) {
+          float inter = map(i, x, x+w, 0, 1);
+          int c = lerpColor(c1, c2, inter);
+          stroke(c);
+          line(i, y, i, y+h);
         }
-        }else if(hasLost){
-          text("Sorry, you lose.", width/3,height/3);
-          if(globalTimer>=5 ){
-            resetGame();
-          }
-          }else{
-            text("Press Start", width/3,height/3);
-          }
-
-          //     if(targetFreq>0){
-          // text("Target: " + targetFreq,100,100);
-          // text(inFreq,100,200);
-          // }
-          // text(frameRate,100,100);
-          if(globalTimer>=90){
-            hasLost=true;
-            tStampPlay=millis();
-          }
-
-          if(startSound)
-          oscStart();
-        globalTimer = (millis()-tStampPlay)*0.001f;
-}
+      }
 
 
-        public void setGradient(int x, int y, float w, float h, int c1, int c2, int axis ) {
-
-          noFill();
-
-          for (int i = x; i <= x+w; i++) {
-            float inter = map(i, x, x+w, 0, 1);
-            int c = lerpColor(c1, c2, inter);
-            stroke(c);
-            line(i, y, i, y+h);
-          }
+      public void oscEvent(OscMessage theOscMessage) {
+        /* print the address pattern and the typetag of the received OscMessage */
+        // println(theOscMessage.get(1).floatValue());
+        if(theOscMessage.checkAddrPattern("/target")==true) {
+          //get target frequency of glass from SC
+          targetFreq = theOscMessage.get(0).floatValue();
+          minFreq = targetFreq-targetThresh; //set min and max freq to target frequency from SC
+          maxFreq = targetFreq+targetThresh;
         }
-
-
-        public void oscEvent(OscMessage theOscMessage) {
-          /* print the address pattern and the typetag of the received OscMessage */
-          // println(theOscMessage.get(1).floatValue());
-          if(theOscMessage.checkAddrPattern("/target")==true) {
-            //get target frequency of glass from SC
-            targetFreq = theOscMessage.get(0).floatValue();
-            minFreq = targetFreq-targetThresh; //set min and max freq to target frequency from SC
-            maxFreq = targetFreq+targetThresh;
-          }
-          if(theOscMessage.checkAddrPattern("/pitch")==true && targetFreq>0) {
-            // typetag = theOscMessage.typetag();
-            // inFreq = theOscMessage.get(0).floatValue(); //
-            inFreq = targetFreq; //
-            freqVal = map(inFreq,0,targetFreq*2,height/3,-height/3);
-            //    print("### received an osc message.");
-            // print(" addrpattern: "+theOscMessage.addrPattern());
-            // println(" typetag: "+theOscMessage.typetag());
-
-            //  println(inFreq);
-          }
-          // }
-          // waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
+        if(theOscMessage.checkAddrPattern("/pitch")==true && targetFreq>0) {
+          // typetag = theOscMessage.typetag();
+          // inFreq = theOscMessage.get(0).floatValue(); //
+          inFreq = targetFreq; //
         }
+      }
 
-        public void sendOsc(String adrs, int val){
-          OscMessage myMessage = new OscMessage(adrs);
-          myMessage.add(val); /* add an int to the osc message */
-          oscP5.send(myMessage, myRemoteLocation);
-        }
+      public void sendOsc(String adrs, int val){
+        OscMessage myMessage = new OscMessage(adrs);
+        myMessage.add(val); /* add an int to the osc message */
+        oscP5.send(myMessage, myRemoteLocation);
+      }
 
-        public void oscStart(){
-          sendOsc("/oscGameStart", b2Val);
-          startSound = false;
-        }
+      public void oscStart(){
+        sendOsc("/oscGameStart", b2Val);
+        startSound = false;
+      }
 
-        public void resetGame(){
-          breakGlass =true; //set to true to send osc msg to SC to break glass on win
-          startSound = false;
-           hasWon =false; //set to true when game has been won
-           hasLost =false; //set to true when game has been won
-          intro.reset();
-        }
+      public void resetGame(){
+        println("resetting");
+        playIntro = false;
+        playGame = false;
+        playOutro = false;
+        breakGlass = true; //set to true to send osc msg to SC to break glass on win
+        startSound = false; // send osc msg to SC on game start
+        hasWon =false; //set to true when game has been won
+        intro.reset();
+        hiscore.reset();
+        panel.reset();
+      }
 
-        //buttons in booth work like simulated keyboards
-        public void keyPressed() {
-
-          if (key == TAB) {
-            println("tab");
-            sendOsc("/1/toggle1", b1Val);
-            if(b1Val==0)
-            b1Val=1;
-            else
-            b1Val=0;
-          
+      public void outro(){
+        if(hasWon){
+          if(hiscore.saveHighscore((int)playTimer) || hiscore.hasHighscore()){
+            text(hiscore.getCurrentHiscore() +" seconds!", width/3,height/3);
+            text("New high score!",width/3,height/3+200);
+            player.play();
+            }else{
+              text("You Win!", width/3,height/3);
+            }
+            if(breakGlass){
+              sendOsc("/killTone", 1);
+              breakGlass=false;
+            }
+            }else{
+              text("Sorry, you lose.", width/3,height/3);
+            }
+            println(outroTimer);
+            if(outroTimer>=5){
+              resetGame();
+            }
+            outroTimer = (millis()-tStampOutro)*0.001f;
           }
-          if (key == 'q') {
-            sendOsc("/oscRefTone", 1);
 
+          //buttons in booth work like simulated keyboards
+          public void keyPressed() {
+
+            if (key == TAB) {
+              println("tab");
+              sendOsc("/1/toggle1", b1Val);
+              if(b1Val==0)
+              b1Val=1;
+              else
+              b1Val=0;
+            }
+            if (key == 'q') {
+              sendOsc("/oscRefTone", 1);
+            }
+            if (key == '5') {
+              playIntro = true;
+            }
           }
-          if (key == '5') {
-            intro.setActive();
-          }
-        }
 JSONObject highscore;
-Boolean hasHighscore=false;
 int defaultHighscore = 60;
-
+Boolean hasHighscore=false;
 class Highscore{
 
   public void init(int day, int month) {
+    hasWon=false;
     highscore = loadJSONObject("highscore.json");
     String dateString = day+"-"+month;
     String date = highscore.getString("date");
     // if we're on a new day, reset the highscore to the default
     if(date.equals(dateString) == false){
-    highscore.setInt("score", defaultHighscore);
-    highscore.setString("date", dateString);
-    saveJSONObject(highscore, "data/highscore.json");
-}
-  currentHiscore = highscore.getInt("score"); // set current highscore from json file
+      highscore.setInt("score", defaultHighscore);
+      highscore.setString("date", dateString);
+      saveJSONObject(highscore, "data/highscore.json");
+    }
+    currentHiscore = highscore.getInt("score"); // set current highscore from json file
 
   }
 
-  public void saveHighscore(int pScore){ //(int pScore, String pName, String pPhone)
-    // determine score ranking
-        int score = highscore.getInt("score");
-        // String name = highscore.getString("name");
-        // String phone = highscore.getString("phone");
+  public Boolean saveHighscore(int pScore){ //(int pScore, String pName, String pPhone)
+     hasHighscore=false;
+// determine score ranking
+    int score = highscore.getInt("score");
+println("score: "+score+" player score: "+pScore);
+    // String name = highscore.getString("name");
+    // String phone = highscore.getString("phone");
 
-        if(pScore>score){
-          hasHighscore = true; // if we reached a high score, we record the info and break out from loop
-          highscore.setInt("score", pScore);
-          // highscore.setString("name", pName);
-          // highscore.setString("phone", pPhone);
-          print("HIGHSCORE!!  "+ pScore);
-          }else{
-            println( " :( ");
-          }
+    if(pScore<score){
+      println("new high score");
+      hasHighscore = true; // if we reached a high score, we record the info and break out from loop
+      highscore.setInt("score", pScore);
+      }
       saveJSONObject(highscore, "data/highscore.json");
+      return hasHighscore;
     }
+
+  public int getCurrentHiscore(){
+    return currentHiscore;
+  }
+
+  public Boolean hasHighscore(){
+    return hasHighscore;
+  }
+
+  public void reset(){
+    hasHighscore=false;
+  };
   }
 class IntroScreen{
   float frame1;
   float frame2;
   Panel panel = new Panel();
-Boolean active = false;
-Boolean isActive = false;
-float timer;
-int tStamp = 0;
-Boolean isFinished = false;
+  float timer;
+  int tStamp = 0;
+  Boolean isActive = false;
+  float startTime;
+
   public void init(){
     panel.init();
     frame1 = 0;
-    frame2 = startTime-5;
+    frame2 = 5;
+  startTime = 10;
   }
 
   public void update(){
@@ -298,7 +308,7 @@ Boolean isFinished = false;
     if(!isActive){
       tStamp = millis();
       isActive=true;
-      println("setTimeStamp");
+      println("setIntroTimeStamp");
 
     }
 
@@ -314,30 +324,17 @@ Boolean isFinished = false;
       popMatrix();
     }
 
-  }
-  public void setActive(){
-    active = true;
-  }
-public Boolean isFinished(){
-  return isFinished;
+if(timer>startTime){
+  startSound = true;
+  playGame = true;
+  playIntro = false;
+  println("start game");
 }
 
-  public boolean isActive(){
-    //introScreen is active while timer is less than start time
-    if(timer>startTime && active == true){
-       active = false;
-       isFinished = true;
-       startSound = true;
-       tStampPlay = millis();
-       println("!!!!!");
-      }
-      return active;
-    }
+  }
 
   public void reset(){
-     active = false;
-     isActive = false;
-     isFinished = false;
+    isActive = false;
   }
 }
 class LoudnessMonitor {
@@ -464,6 +461,7 @@ public void update(){
 class Panel {
   PImage logo;
   PImage logoMsk;
+  Boolean isActive;
   // CamGrab camera = new CamGrab();
 
   public void init(){
@@ -519,6 +517,13 @@ class Panel {
 
 
   public void wavePanel(){
+    //set timestamp once per game
+    if(!isActive){
+      tStampPlay = millis();
+      isActive=true;
+      println("setPlayTimeStamp");
+    }
+
     pushStyle();
     strokeWeight(2.5f);  // Thicker
     pushMatrix();
@@ -533,7 +538,7 @@ class Panel {
     textSize(42);
     text(" Time:", width/12, (height)-(height/4));
     textSize(136);
-    text((int)globalTimer, width/12, (height)-(height/4)+(height/10));
+    text((int)playTimer, width/12, (height)-(height/4)+(height/10));
     textSize(92);
     text(" sec", width/5.5f, (height)-(height/4)+(height/8));
     image(logo,width -(width/4), (height)-(height/4)+(height/10));
@@ -597,6 +602,11 @@ class Panel {
     fill(EmBlueGrad);
     ellipse(0,0,100,100);
     popStyle();
+  }
+
+  public void reset(){
+    isActive = false;
+    tWave.reset();
   }
 }
 class TargetWave {
@@ -667,19 +677,14 @@ shape(line,0,0);
       }
     }
 
-    public void setInputFreq(float input){
-      inFreq = input;
-    }
 
     public void targetCount(){
       tCount = millis()-tStamp;
       if(tCount>=winTime)
       hasWon = true;
+      tStampOutro=millis();
     }
 
-    public float getInputFreq(){
-      return inFreq;
-    }
 
     public void updateSinewave(){
       for(int i = 0; i<wavetable.length-1; i++) {
@@ -719,6 +724,7 @@ shape(line,0,0);
 
    public void update()
    {
+     
      noFill();
      // stroke(0, 255,208);
      strokeWeight(2.5f);

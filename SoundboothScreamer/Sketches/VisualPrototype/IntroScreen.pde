@@ -2,15 +2,16 @@ class IntroScreen{
   float frame1;
   float frame2;
   Panel panel = new Panel();
-Boolean active = false;
-Boolean isActive = false;
-float timer;
-int tStamp = 0;
-Boolean isFinished = false;
+  float timer;
+  int tStamp = 0;
+  Boolean isActive = false;
+  float startTime;
+
   void init(){
     panel.init();
     frame1 = 0;
-    frame2 = startTime-5;
+    frame2 = 5;
+  startTime = 10;
   }
 
   void update(){
@@ -18,7 +19,7 @@ Boolean isFinished = false;
     if(!isActive){
       tStamp = millis();
       isActive=true;
-      println("setTimeStamp");
+      println("setIntroTimeStamp");
 
     }
 
@@ -34,29 +35,16 @@ Boolean isFinished = false;
       popMatrix();
     }
 
-  }
-  void setActive(){
-    active = true;
-  }
-Boolean isFinished(){
-  return isFinished;
+if(timer>startTime){
+  startSound = true;
+  playGame = true;
+  playIntro = false;
+  println("start game");
 }
 
-  boolean isActive(){
-    //introScreen is active while timer is less than start time
-    if(timer>startTime && active == true){
-       active = false;
-       isFinished = true;
-       startSound = true;
-       tStampPlay = millis();
-       println("!!!!!");
-      }
-      return active;
-    }
+  }
 
   void reset(){
-     active = false;
-     isActive = false;
-     isFinished = false;
+    isActive = false;
   }
 }

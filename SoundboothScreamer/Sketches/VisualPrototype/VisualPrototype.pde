@@ -46,19 +46,22 @@ public PVector tWavePos;
 public PVector panelSize;
 public float minFreq;
 public float maxFreq;
-public float startTime;
 public int currentHiscore;
-public float globalTimer;
-float tStampPlay;
-float inFreq; // input frequency from Supercollider
+public float playTimer;
+public float tStampPlay;
+public float outroTimer;
+public float tStampOutro;
+public float inFreq; // input frequency from Supercollider
 float freqVal; // mapped inFreq value to screen height range
 String typetag;
 float targetThresh = 50;
 Boolean hasWon =false; //set to true when game has been won
-Boolean hasLost =false; //set to true when game has been won
 Boolean breakGlass =true; //set to true to send osc msg to SC to break glass on win
-public Boolean startSound = false;
-boolean pressedOnce = true;
+public Boolean startSound ;
+public Boolean playIntro;
+public Boolean playGame;
+public Boolean playOutro;
+float gameDuration = 2;
 
 boolean sketchFullScreen() {
   return true;
@@ -68,11 +71,10 @@ void setup() {
   size(1920,1080, P2D); // 1600 x 900
   noCursor();
   // font = createFont("GillSans", 48);
-  font = createFont("EMprintW01-Regular", 120);
-  startTime = 10;
+  font = createFont("EMprintW01-Regular", 115);
   minim = new Minim(this);
   in = minim.getLineIn();
-    player = minim.loadFile("applause.aiff");
+  player = minim.loadFile("applause.aiff");
   textFont(font);
   textAlign(CENTER, CENTER);
   /*------------init classes ------------*/
@@ -89,133 +91,129 @@ void setup() {
   /*------------other vars --------------------*/
   tWavePos = new PVector(width/3, height/2);
   panelSize = new PVector(width*0.286, height);
-
   // loud.init(width/8, height/3, 50, 50);
   panel.init();
   hiscore.init(day(),month());
+  resetGame();
 }
 
 void draw() {
   setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
   // background(EmBlue);
-  // inFreq = map(sin(millis()*0.001),-1,1,targetFreq-100,targetFreq+100);
 
-
-  if(intro.isActive() ){
+  if(playIntro){
     intro.update();
-    }else if(intro.isFinished() && !hasWon && !hasLost){
-      tWave.setInputFreq(inFreq);
+    }else if(playGame){
       panel.wavePanel();
-      }else if(hasWon){
-        if(currentHiscore<globalTimer){
-        text("You Win!", width/3,height/3);
+      playTimer = (millis()-tStampPlay)*0.001;
+      }else if(playOutro){
+        outro();
         }else{
-        text(globalTimer +" SECONDS: NEW HIGH SCORE!", width/3,height/3);
-        hiscore.saveHighscore((int)globalTimer);
-          player.play();
+          text("Press Start", width/3,height/2);
+        }
+
+        if(startSound)
+        oscStart();
+        if(playTimer>=gameDuration && playGame){
+          //player has ran out of time, gameover
+          playOutro=true;
+          playGame=false;
+          tStampOutro=millis();
+        }
       }
-        if(breakGlass){
-          sendOsc("/killTone", 1);
-          breakGlass=false;
+
+
+      void setGradient(int x, int y, float w, float h, color c1, color c2, int axis ) {
+
+        noFill();
+
+        for (int i = x; i <= x+w; i++) {
+          float inter = map(i, x, x+w, 0, 1);
+          color c = lerpColor(c1, c2, inter);
+          stroke(c);
+          line(i, y, i, y+h);
         }
-        }else if(hasLost){
-          text("Sorry, you lose.", width/3,height/3);
-          if(globalTimer>=5 ){
-            resetGame();
-          }
-          }else{
-            text("Press Start", width/3,height/3);
-          }
-
-          //     if(targetFreq>0){
-          // text("Target: " + targetFreq,100,100);
-          // text(inFreq,100,200);
-          // }
-          // text(frameRate,100,100);
-          if(globalTimer>=90){
-            hasLost=true;
-            tStampPlay=millis();
-          }
-
-          if(startSound)
-          oscStart();
-        globalTimer = (millis()-tStampPlay)*0.001;
-}
+      }
 
 
-        void setGradient(int x, int y, float w, float h, color c1, color c2, int axis ) {
-
-          noFill();
-
-          for (int i = x; i <= x+w; i++) {
-            float inter = map(i, x, x+w, 0, 1);
-            color c = lerpColor(c1, c2, inter);
-            stroke(c);
-            line(i, y, i, y+h);
-          }
+      void oscEvent(OscMessage theOscMessage) {
+        /* print the address pattern and the typetag of the received OscMessage */
+        // println(theOscMessage.get(1).floatValue());
+        if(theOscMessage.checkAddrPattern("/target")==true) {
+          //get target frequency of glass from SC
+          targetFreq = theOscMessage.get(0).floatValue();
+          minFreq = targetFreq-targetThresh; //set min and max freq to target frequency from SC
+          maxFreq = targetFreq+targetThresh;
         }
-
-
-        void oscEvent(OscMessage theOscMessage) {
-          /* print the address pattern and the typetag of the received OscMessage */
-          // println(theOscMessage.get(1).floatValue());
-          if(theOscMessage.checkAddrPattern("/target")==true) {
-            //get target frequency of glass from SC
-            targetFreq = theOscMessage.get(0).floatValue();
-            minFreq = targetFreq-targetThresh; //set min and max freq to target frequency from SC
-            maxFreq = targetFreq+targetThresh;
-          }
-          if(theOscMessage.checkAddrPattern("/pitch")==true && targetFreq>0) {
-            // typetag = theOscMessage.typetag();
-            // inFreq = theOscMessage.get(0).floatValue(); //
-            inFreq = targetFreq; //
-            freqVal = map(inFreq,0,targetFreq*2,height/3,-height/3);
-            //    print("### received an osc message.");
-            // print(" addrpattern: "+theOscMessage.addrPattern());
-            // println(" typetag: "+theOscMessage.typetag());
-
-            //  println(inFreq);
-          }
-          // }
-          // waveY =  map(oscFreq, 0, targetFreq*2, height, 0);
+        if(theOscMessage.checkAddrPattern("/pitch")==true && targetFreq>0) {
+          // typetag = theOscMessage.typetag();
+          // inFreq = theOscMessage.get(0).floatValue(); //
+          inFreq = targetFreq; //
         }
+      }
 
-        void sendOsc(String adrs, int val){
-          OscMessage myMessage = new OscMessage(adrs);
-          myMessage.add(val); /* add an int to the osc message */
-          oscP5.send(myMessage, myRemoteLocation);
-        }
+      void sendOsc(String adrs, int val){
+        OscMessage myMessage = new OscMessage(adrs);
+        myMessage.add(val); /* add an int to the osc message */
+        oscP5.send(myMessage, myRemoteLocation);
+      }
 
-        void oscStart(){
-          sendOsc("/oscGameStart", b2Val);
-          startSound = false;
-        }
+      void oscStart(){
+        sendOsc("/oscGameStart", b2Val);
+        startSound = false;
+      }
 
-        void resetGame(){
-          breakGlass =true; //set to true to send osc msg to SC to break glass on win
-          startSound = false;
-           hasWon =false; //set to true when game has been won
-           hasLost =false; //set to true when game has been won
-          intro.reset();
-        }
+      void resetGame(){
+        println("resetting");
+        playIntro = false;
+        playGame = false;
+        playOutro = false;
+        breakGlass = true; //set to true to send osc msg to SC to break glass on win
+        startSound = false; // send osc msg to SC on game start
+        hasWon =false; //set to true when game has been won
+        intro.reset();
+        hiscore.reset();
+        panel.reset();
+      }
 
-        //buttons in booth work like simulated keyboards
-        void keyPressed() {
-
-          if (key == TAB) {
-            println("tab");
-            sendOsc("/1/toggle1", b1Val);
-            if(b1Val==0)
-            b1Val=1;
-            else
-            b1Val=0;
-          
+      void outro(){
+        if(hasWon){
+          if(hiscore.saveHighscore((int)playTimer) || hiscore.hasHighscore()){
+            text(hiscore.getCurrentHiscore() +" seconds!", width/3,height/3);
+            text("New high score!",width/3,height/3+200);
+            player.play();
+            }else{
+              text("You Win!", width/3,height/3);
+            }
+            if(breakGlass){
+              sendOsc("/killTone", 1);
+              breakGlass=false;
+            }
+            }else{
+              text("Sorry, you lose.", width/3,height/3);
+            }
+            println(outroTimer);
+            if(outroTimer>=5){
+              resetGame();
+            }
+            outroTimer = (millis()-tStampOutro)*0.001;
           }
-          if (key == 'q') {
-            sendOsc("/oscRefTone", 1);
 
+          //buttons in booth work like simulated keyboards
+          void keyPressed() {
+
+            if (key == TAB) {
+              println("tab");
+              sendOsc("/1/toggle1", b1Val);
+              if(b1Val==0)
+              b1Val=1;
+              else
+              b1Val=0;
+            }
+            if (key == 'q') {
+              sendOsc("/oscRefTone", 1);
+            }
+            if (key == '5') {
+              playIntro = true;
+            }
           }
-          if (key == '5') {
-            intro.setActive();
-          }
-        }

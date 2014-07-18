@@ -2,6 +2,7 @@ s.options.sampleRate = 48000;
 //Server.local.options.device_("Scarlett 2i4 USB");
  Server.local.options.device_("Komplete Audio 6");
 s.boot
+s.quit
 
 //------------------------------
 // register to receive this message

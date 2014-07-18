@@ -17,7 +17,7 @@
 	//get frequency range vars
 	getFreqRange,total, sIndex, eIndex, range, mRange, count, startFreq, endFreq, avgFreq, targetFreq, pitchVal,
 	// visualizer vars
-	toP5osc,freqOsc, refTone, startGame, oscRefTone,
+	toP5osc,freqOsc, refTone, startGame, oscRefTone, monitorOutput,
 	//high amplitude glass killing machine vars
 	killShot, oscKill, playTrig,breakGlass,
 	//paths
@@ -25,21 +25,24 @@
 	//-- onStart routine to record----------------------------------
 
 	onStart = 	Routine({
-		"play that glassy shit".postln;
-		buf = Buffer.alloc(s, 65536, 1);
-		buf.write(audioFilepath,
-		"aiff", "int16", 0, 0, true);
-		// create the diskout node; making sure it comes after the source
-		rec = Synth.tail(nil, "recToDisk", ["bufnum", buf]);
+		// "play that glassy shit".postln;
+		// buf = Buffer.alloc(s, 65536, 1);
+		// buf.write(audioFilepath,
+		// "aiff", "int16", 0, 0, true);
+		// // create the diskout node; making sure it comes after the source
+		// rec = Synth.tail(nil, "recToDisk", ["bufnum", buf]);
+
 	});
 
 	//-- onStop routine stops recording and frees---------------
 	onStop = Routine({
 		// stop recording and free it up
-		rec.free;
-		play.free;
-		buf.close;
-		buf.free;
+		// rec.free;
+		// play.free;
+		// buf.close;
+		// buf.free;
+		~buf = Buffer.read(s, "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff");
+
 		0.1.wait;
 		analyzeFreq.play;
 	});
@@ -70,7 +73,7 @@
 		target = 0; // init at zero
 		dict.size.do({|i| if(dict.values.at(i)>target,{target = dict.values.at(i)})});
 		killFreq = dict.findKeyForValue(target);
-		1.wait;
+		2.wait;
 		getFreqRange.play;
 	});
 	//-----get most stabile frequency range-----------------------
@@ -120,12 +123,14 @@
 		}).add;
 
 		freqOsc = Synth.new("pitchFollow");
+		monitorOutput = Synth.new("in");
 
 		// refTone.free;
 		"start game".postln;
 	});
 	//-- play the game via Processing----
 	breakGlass = Routine({
+		monitorOutput.free;
 		startGame.stop;
 				killShot = Synth(\deathByAudio, [\freq, avgFreq]);
 				"killing...".postln; //((startFreq+endFreq)/2).postln;
@@ -162,7 +167,7 @@ analyzeFreq.reset;
 
 	oscKill = OSCFunc({ arg msg, time, addr, recvPort;
 		// [msg, time, addr, recvPort].postln;
-		msg[1].postln;
+		// msg[1].postln;
 		if(msg[1]==1,
 			// playTrig = OSCresponderNode(s.addr,'/tr',{ arg time, responder, msg;
 			// 	// msg[3].postln;
@@ -199,17 +204,18 @@ SynthDef("playback", { arg bufnum;
 	src = PlayBuf.ar(~referenceOut, bufnum, doneAction:2, loop:0);
 	# freq, hasFreq = Tartini.kr(src,threshold: 0.1);
 	SendTrig.kr(Impulse.kr(100),0,freq);
-	Out.ar(~referenceOut, src);
+	// Out.ar(~referenceOut, src);
 }).send(s);
 
 SynthDef("deathByAudio",{arg freq;
 	var sweep, rate, env, amp;
 	env = Env([0,1.0,1.0,0],[0.2,2,0.5], 'sin');
 	rate = 0.2;
-	amp = 0.12;
+	amp = 0.05;
 	// sweep = SinOsc.ar(freq)+SinOsc.ar(rate))*0.15;
-	sweep = SinOsc.ar(freq)*amp;
-	Out.ar(~hornDriverOut,Limiter.ar(sweep, amp, 0.01)*EnvGen.kr(env, doneAction:2));
+	sweep = SinOsc.ar(freq,0,amp*EnvGen.kr(env, doneAction:2));
+	// Out.ar(~hornDriverOut,sweep*EnvGen.kr(env, doneAction:2));
+	Out.ar(~hornDriverOut,Limiter.ar(LPF.ar(HPF.ar(sweep,400),1000), amp, 0.01));
 }).send(s);
 
 
@@ -223,12 +229,12 @@ SynthDef("pitchFollow",{
 	var in, amp, freq, hasFreq, out;
 	in = In.ar(~glassMicIn);
 	// amp = Amplitude.kr(in, 0.05, 0.05);
-	# freq, hasFreq = Tartini.kr(in,0.2);
+	# freq, hasFreq = Tartini.kr(in,0.4);
 	SendTrig.kr(Impulse.kr(10),0,freq);
 	// Out.ar(0,(SinOsc.ar(MouseY.kr(560,567.5)) * MouseX.kr(0.0,10)));
 }).load(s);
 
-// Synth(\deathByAudio, [\freq, 546.9]);
+// Synth(\deathByAudio, [\freq, 552.1]);
 //------------------------------
 //record
 
@@ -239,9 +245,13 @@ SynthDef("recToDisk", {arg bufnum;
 }).send(s);
 
 //basic mic out to monitor synth
-SynthDef("in", { arg out=0, in=0;
-	Out.ar(~referenceOut, SoundIn.ar(~voiceMicIn)*0.2);
+SynthDef("in", {
+	Out.ar(~referenceOut, 7*LPF.ar(HPF.ar(In.ar(~voiceMicIn),400),1000));
 	//Out.ar(0, SoundIn.ar(0)*0.2);
 }).play(s);
 
 //s.reboot
+//			~buf = Buffer.read(s, "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff");
+/*
+Synth.new("in");
+*/

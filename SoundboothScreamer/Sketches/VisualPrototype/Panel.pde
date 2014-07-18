@@ -1,6 +1,7 @@
 class Panel {
   PImage logo;
   PImage logoMsk;
+  Boolean isActive;
   // CamGrab camera = new CamGrab();
 
   void init(){
@@ -56,6 +57,13 @@ class Panel {
 
 
   void wavePanel(){
+    //set timestamp once per game
+    if(!isActive){
+      tStampPlay = millis();
+      isActive=true;
+      println("setPlayTimeStamp");
+    }
+
     pushStyle();
     strokeWeight(2.5);  // Thicker
     pushMatrix();
@@ -70,7 +78,7 @@ class Panel {
     textSize(42);
     text(" Time:", width/12, (height)-(height/4));
     textSize(136);
-    text((int)globalTimer, width/12, (height)-(height/4)+(height/10));
+    text((int)playTimer, width/12, (height)-(height/4)+(height/10));
     textSize(92);
     text(" sec", width/5.5, (height)-(height/4)+(height/8));
     image(logo,width -(width/4), (height)-(height/4)+(height/10));
@@ -134,5 +142,10 @@ class Panel {
     fill(EmBlueGrad);
     ellipse(0,0,100,100);
     popStyle();
+  }
+
+  void reset(){
+    isActive = false;
+    tWave.reset();
   }
 }

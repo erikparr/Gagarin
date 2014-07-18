@@ -19,6 +19,7 @@
 
    void update()
    {
+     
      noFill();
      // stroke(0, 255,208);
      strokeWeight(2.5);

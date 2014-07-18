@@ -66,19 +66,14 @@ shape(line,0,0);
       }
     }
 
-    void setInputFreq(float input){
-      inFreq = input;
-    }
 
     void targetCount(){
       tCount = millis()-tStamp;
       if(tCount>=winTime)
       hasWon = true;
+      tStampOutro=millis();
     }
 
-    float getInputFreq(){
-      return inFreq;
-    }
 
     void updateSinewave(){
       for(int i = 0; i<wavetable.length-1; i++) {
