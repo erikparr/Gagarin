@@ -19,14 +19,14 @@
 
    void update()
    {
-     
+
      noFill();
      // stroke(0, 255,208);
      strokeWeight(2.5);
      // draw the waveforms so we can see what we are monitoring
      for(int i = 0; i < line.getVertexCount(); i++){
-// line((i*step), in.left.get(i)*yScaler, (i*step)+(step/2), py+in.left.get(i+1)*yScaler );
-    line.setVertex(i, (i*step), in.left.get(i)*yScaler);
+// line((i*step), in.right.get(i)*yScaler, (i*step)+(step/2), py+in.right.get(i+1)*yScaler );
+    line.setVertex(i, (i*step), in.right.get(i)*yScaler);
      }
 shape(line,0,0);
    }

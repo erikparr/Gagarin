@@ -27,6 +27,7 @@ public class VisualPrototype extends PApplet {
 
 
 
+PShape s;
 OscP5 oscP5;
 NetAddress myRemoteLocation;
 int b1Val;
@@ -73,16 +74,17 @@ public float tStampPlay;
 public float outroTimer;
 public float tStampOutro;
 public float inFreq; // input frequency from Supercollider
-float freqVal; // mapped inFreq value to screen height range
 String typetag;
-float targetThresh = 50;
+float targetThresh;
 Boolean hasWon =false; //set to true when game has been won
 Boolean breakGlass =true; //set to true to send osc msg to SC to break glass on win
 public Boolean startSound ;
 public Boolean playIntro;
 public Boolean playGame;
 public Boolean playOutro;
-float gameDuration = 5;
+float gameDuration = 90;
+int difficultyMode; //0 = easy, 1 = medium, 2 = difficult
+float outroTime = 5; //time on gameover/highscore screen
 
 public boolean sketchFullScreen() {
   return true;
@@ -91,8 +93,9 @@ public boolean sketchFullScreen() {
 public void setup() {
   size(1920,1080, P2D); // 1600 x 900
   noCursor();
+  s = loadShape("logo.svg");
   // font = createFont("GillSans", 48);
-  font = createFont("EMprintW01-Regular", 115);
+  font = createFont("EMprintW01-Regular", 110);
   minim = new Minim(this);
   in = minim.getLineIn();
   player = minim.loadFile("applause.aiff");
@@ -110,6 +113,7 @@ public void setup() {
   b2Val = 1;
   b3Val = 1;
   /*------------other vars --------------------*/
+  setDifficultyMode();
   tWavePos = new PVector(width/3, height/2);
   panelSize = new PVector(width*0.286f, height);
   // loud.init(width/8, height/3, 50, 50);
@@ -119,14 +123,27 @@ public void setup() {
 }
 
 public void draw() {
-  setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
-  // background(EmBlue);
-
+  //setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
+   background(EmBlue);
   if(playIntro){
     intro.update();
     }else if(playGame){
+      s.disableStyle();
+      fill(255,255,255, 255);
+      stroke(255);
+      smooth();
+ shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
+
       panel.wavePanel();
       playTimer = (millis()-tStampPlay)*0.001f;
+
+      if(playTimer>=gameDuration && playGame){
+        //player has ran out of time, gameover
+        playOutro=true;
+        playGame=false;
+        tStampOutro=millis();
+        println("start outro");
+      }
       }else if(playOutro){
         outro();
         }else{
@@ -135,19 +152,23 @@ public void draw() {
 
         if(startSound)
         oscStart();
-        if(playTimer>=gameDuration && playGame){
-          //player has ran out of time, gameover
-          playOutro=true;
-          playGame=false;
-          tStampOutro=millis();
+
+        //display difficulty settings
+        if(playGame && playTimer<5){
+          if(difficultyMode==0)
+          text("Easy mode", 200,200);
+          if(difficultyMode==1)
+          text("Medium mode", 200,200);
+          if(difficultyMode==2)
+          text("Difficult mode", 200,200);
         }
+
       }
 
 
       public void setGradient(int x, int y, float w, float h, int c1, int c2, int axis ) {
 
         noFill();
-
         for (int i = x; i <= x+w; i++) {
           float inter = map(i, x, x+w, 0, 1);
           int c = lerpColor(c1, c2, inter);
@@ -168,8 +189,8 @@ public void draw() {
         }
         if(theOscMessage.checkAddrPattern("/pitch")==true && targetFreq>0) {
           // typetag = theOscMessage.typetag();
-          // inFreq = theOscMessage.get(0).floatValue(); //
-          inFreq = targetFreq; //
+          inFreq = theOscMessage.get(0).floatValue(); //
+          // inFreq = targetFreq; //
         }
       }
 
@@ -198,28 +219,52 @@ public void draw() {
       }
 
       public void outro(){
+        outroTimer = (millis()-tStampOutro)*0.001f;
         if(hasWon){
+          println("hasHS: "+hasHighscore);
           if(hiscore.saveHighscore((int)playTimer) || hiscore.hasHighscore()){
-            text(hiscore.getCurrentHiscore() +" seconds!", width/3,height/3);
-            text("New high score!",width/3,height/3+200);
+            textSize(64);
+            text("New high score",width/3,height/2-200);
+            textSize(110);
+            text((int)playTimer +" sec", width/3,height/2);
             player.play();
             }else{
-              text("You Win!", width/3,height/3);
+              textSize(32);
+        text("         Your score", width/3,height/2);
+        textSize(110);
+        text((int)playTimer+ " sec", width/3,height/2+100);
             }
             if(breakGlass){
               sendOsc("/killTone", 1);
               breakGlass=false;
             }
             }else{
-              text("Sorry, you lose.", width/3,height/3);
+              sendOsc("/reset", 1);
+              text("Try again later", width/3,height/2);
             }
             println(outroTimer);
-            if(outroTimer>=5){
+            if(outroTimer>=outroTime){
               resetGame();
             }
-            outroTimer = (millis()-tStampOutro)*0.001f;
           }
 
+          public void setDifficultyMode(){
+            int ranVal = (int)random(100);
+            //weighted randomness for difficulty settings
+            if(ranVal<50){
+              difficultyMode=0;
+              }else if(ranVal>50 && ranVal<90){
+              difficultyMode=1;
+              }else{
+              difficultyMode=2;
+            }
+            if(difficultyMode==0)
+            targetThresh = random(10,20);
+            if(difficultyMode==1)
+            targetThresh = random(5,10);
+            if(difficultyMode==2)
+            targetThresh = random(1,5);
+}
           //buttons in booth work like simulated keyboards
           public void keyPressed() {
 
@@ -259,7 +304,6 @@ class Highscore{
   }
 
   public Boolean saveHighscore(int pScore){ //(int pScore, String pName, String pPhone)
-     hasHighscore=false;
 // determine score ranking
     int score = highscore.getInt("score");
 println("score: "+score+" player score: "+pScore);
@@ -329,6 +373,7 @@ if(timer>startTime){
   playGame = true;
   playIntro = false;
   println("start game");
+  println(second());
 }
 
   }
@@ -459,18 +504,20 @@ public void update(){
 
 }
 class Panel {
-  PImage logo;
-  PImage logoMsk;
+  // PImage logo;
+  // PImage logoMsk;
+  PShape s;
   Boolean isActive;
   // CamGrab camera = new CamGrab();
 
   public void init(){
+      s = loadShape("logo.svg");
     rectMode(CORNER);
     textAlign(LEFT, CENTER);
     // camera.init();
-    logo = loadImage("logoSm.jpg");  // Load an image into the program
-    logoMsk = loadImage("logoSmMsk3.jpg");  // Load an image into the program
-    logo.mask(logoMsk);
+    // logo = loadImage("logoSm.jpg");  // Load an image into the program
+    // logoMsk = loadImage("logoSmMsk3.jpg");  // Load an image into the program
+    // logo.mask(logoMsk);
   }
 
   public void updateWindow(float width, float height, Boolean highlight){
@@ -501,9 +548,6 @@ class Panel {
     popStyle();
   }
 
-  public void textByline(String text){
-
-  }
 
 
   public void updateSidebar(float width, float height){
@@ -530,7 +574,7 @@ class Panel {
     translate(0, height/2);
     tWave.update(true);
     pushMatrix();
-    translate(0,freqVal);
+    translate(0,map(inFreq,60,500,300,-300));
     wave.update();
     popMatrix();
     popMatrix();
@@ -541,7 +585,11 @@ class Panel {
     text((int)playTimer, width/12, (height)-(height/4)+(height/10));
     textSize(92);
     text(" sec", width/5.5f, (height)-(height/4)+(height/8));
-    image(logo,width -(width/4), (height)-(height/4)+(height/10));
+// image(logo,width -(width/4), (height)-(height/4)+(height/10));
+  // s.disableStyle();
+  // fill(255,255,255, map(mouseX, 0, width, 0, 255));
+  // noStroke();
+  // shape(s,width -(width/4), (height)-(height/4)+(height/10));
     popStyle();
   }
 
@@ -680,9 +728,16 @@ shape(line,0,0);
 
     public void targetCount(){
       tCount = millis()-tStamp;
-      if(tCount>=winTime)
+      // if(tCount>=winTime-1000){
+      //   lockFreq=true;
+      //   sendOsc("/killTone", 1);
+      // }
+      if(tCount>=winTime){
       hasWon = true;
+      playOutro=true;
+      playGame=false;
       tStampOutro=millis();
+    }
     }
 
 
@@ -724,14 +779,14 @@ shape(line,0,0);
 
    public void update()
    {
-     
+
      noFill();
      // stroke(0, 255,208);
      strokeWeight(2.5f);
      // draw the waveforms so we can see what we are monitoring
      for(int i = 0; i < line.getVertexCount(); i++){
-// line((i*step), in.left.get(i)*yScaler, (i*step)+(step/2), py+in.left.get(i+1)*yScaler );
-    line.setVertex(i, (i*step), in.left.get(i)*yScaler);
+// line((i*step), in.right.get(i)*yScaler, (i*step)+(step/2), py+in.right.get(i+1)*yScaler );
+    line.setVertex(i, (i*step), in.right.get(i)*yScaler);
      }
 shape(line,0,0);
    }

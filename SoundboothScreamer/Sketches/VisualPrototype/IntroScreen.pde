@@ -40,6 +40,7 @@ if(timer>startTime){
   playGame = true;
   playIntro = false;
   println("start game");
+  println(second());
 }
 
   }

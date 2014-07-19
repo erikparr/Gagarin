@@ -69,9 +69,16 @@ shape(line,0,0);
 
     void targetCount(){
       tCount = millis()-tStamp;
-      if(tCount>=winTime)
+      // if(tCount>=winTime-1000){
+      //   lockFreq=true;
+      //   sendOsc("/killTone", 1);
+      // }
+      if(tCount>=winTime){
       hasWon = true;
+      playOutro=true;
+      playGame=false;
       tStampOutro=millis();
+    }
     }
 
 

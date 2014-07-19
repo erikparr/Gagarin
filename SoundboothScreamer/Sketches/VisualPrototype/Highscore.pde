@@ -19,7 +19,6 @@ class Highscore{
   }
 
   Boolean saveHighscore(int pScore){ //(int pScore, String pName, String pPhone)
-     hasHighscore=false;
 // determine score ranking
     int score = highscore.getInt("score");
 println("score: "+score+" player score: "+pScore);

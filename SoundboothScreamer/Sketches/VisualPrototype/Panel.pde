@@ -1,16 +1,18 @@
 class Panel {
-  PImage logo;
-  PImage logoMsk;
+  // PImage logo;
+  // PImage logoMsk;
+  PShape s;
   Boolean isActive;
   // CamGrab camera = new CamGrab();
 
   void init(){
+      s = loadShape("logo.svg");
     rectMode(CORNER);
     textAlign(LEFT, CENTER);
     // camera.init();
-    logo = loadImage("logoSm.jpg");  // Load an image into the program
-    logoMsk = loadImage("logoSmMsk3.jpg");  // Load an image into the program
-    logo.mask(logoMsk);
+    // logo = loadImage("logoSm.jpg");  // Load an image into the program
+    // logoMsk = loadImage("logoSmMsk3.jpg");  // Load an image into the program
+    // logo.mask(logoMsk);
   }
 
   void updateWindow(float width, float height, Boolean highlight){
@@ -41,9 +43,6 @@ class Panel {
     popStyle();
   }
 
-  void textByline(String text){
-
-  }
 
 
   void updateSidebar(float width, float height){
@@ -70,7 +69,7 @@ class Panel {
     translate(0, height/2);
     tWave.update(true);
     pushMatrix();
-    translate(0,freqVal);
+    translate(0,map(inFreq,60,500,300,-300));
     wave.update();
     popMatrix();
     popMatrix();
@@ -81,7 +80,11 @@ class Panel {
     text((int)playTimer, width/12, (height)-(height/4)+(height/10));
     textSize(92);
     text(" sec", width/5.5, (height)-(height/4)+(height/8));
-    image(logo,width -(width/4), (height)-(height/4)+(height/10));
+// image(logo,width -(width/4), (height)-(height/4)+(height/10));
+  // s.disableStyle();
+  // fill(255,255,255, map(mouseX, 0, width, 0, 255));
+  // noStroke();
+  // shape(s,width -(width/4), (height)-(height/4)+(height/10));
     popStyle();
   }
 
