@@ -83,7 +83,7 @@ public Boolean playIntro;
 public Boolean playGame;
 public Boolean playOutro;
 float gameDuration = 90;
-int difficultyMode; //0 = easy, 1 = medium, 2 = difficult
+int difficultyMode=2; //0 = easy, 1 = medium, 2 = difficult
 float outroTime = 5; //time on gameover/highscore screen
 
 public boolean sketchFullScreen() {
@@ -124,15 +124,15 @@ public void setup() {
 
 public void draw() {
   //setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
-   background(EmBlue);
+   background(0);
   if(playIntro){
     intro.update();
     }else if(playGame){
-      s.disableStyle();
-      fill(255,255,255, 255);
-      stroke(255);
-      smooth();
- shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
+ //      s.disableStyle();
+ //      fill(255,255,255, 255);
+ //      stroke(255);
+ //      smooth();
+ // shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
 
       panel.wavePanel();
       playTimer = (millis()-tStampPlay)*0.001f;
@@ -251,19 +251,19 @@ public void draw() {
           public void setDifficultyMode(){
             int ranVal = (int)random(100);
             //weighted randomness for difficulty settings
-            if(ranVal<50){
-              difficultyMode=0;
-              }else if(ranVal>50 && ranVal<90){
-              difficultyMode=1;
-              }else{
-              difficultyMode=2;
-            }
+            // if(ranVal<50){
+            //   difficultyMode=0;
+            //   }else if(ranVal>50 && ranVal<90){
+            //   difficultyMode=1;
+            //   }else{
+            //   difficultyMode=2;
+            // }
             if(difficultyMode==0)
             targetThresh = random(10,20);
             if(difficultyMode==1)
             targetThresh = random(5,10);
             if(difficultyMode==2)
-            targetThresh = random(1,5);
+            targetThresh = random(1,3);
 }
           //buttons in booth work like simulated keyboards
           public void keyPressed() {
@@ -687,6 +687,10 @@ class TargetWave {
   public void update(Boolean active){
     pushMatrix();
     pushStyle();
+    if(inFreq<targetFreq)
+    drawArrowUp();
+    if(inFreq>targetFreq)
+    drawArrowDown();
     rectMode(CENTER);
     // stroke(255, 235, 22);
     stroke(255);
@@ -725,6 +729,24 @@ shape(line,0,0);
       }
     }
 
+public void drawArrowUp(){
+  pushMatrix();
+  translate(width-(width/7),-100);
+  stroke(255);
+line(0,0,100,-100);
+line(100,-100,200,0);
+popMatrix();
+}
+
+public void drawArrowDown(){
+  pushMatrix();
+  translate(width-(width/7),100);
+
+  stroke(255);
+line(0,0,100,100);
+line(100,100,200,0);
+popMatrix();
+}
 
     public void targetCount(){
       tCount = millis()-tStamp;

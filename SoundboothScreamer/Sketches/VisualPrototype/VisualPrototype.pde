@@ -62,7 +62,7 @@ public Boolean playIntro;
 public Boolean playGame;
 public Boolean playOutro;
 float gameDuration = 90;
-int difficultyMode; //0 = easy, 1 = medium, 2 = difficult
+int difficultyMode=1; //0 = easy, 1 = medium, 2 = difficult
 float outroTime = 5; //time on gameover/highscore screen
 
 boolean sketchFullScreen() {
@@ -103,7 +103,7 @@ void setup() {
 
 void draw() {
   //setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
-   background(EmBlue);
+   background(0);
   if(playIntro){
     intro.update();
     }else if(playGame){
@@ -230,19 +230,19 @@ void draw() {
           void setDifficultyMode(){
             int ranVal = (int)random(100);
             //weighted randomness for difficulty settings
-            if(ranVal<50){
-              difficultyMode=0;
-              }else if(ranVal>50 && ranVal<90){
-              difficultyMode=1;
-              }else{
-              difficultyMode=2;
-            }
+            // if(ranVal<50){
+            //   difficultyMode=0;
+            //   }else if(ranVal>50 && ranVal<90){
+            //   difficultyMode=1;
+            //   }else{
+            //   difficultyMode=2;
+            // }
             if(difficultyMode==0)
             targetThresh = random(10,20);
             if(difficultyMode==1)
             targetThresh = random(5,10);
             if(difficultyMode==2)
-            targetThresh = random(1,5);
+            targetThresh = random(1,3);
 }
           //buttons in booth work like simulated keyboards
           void keyPressed() {

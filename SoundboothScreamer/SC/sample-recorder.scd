@@ -1,12 +1,12 @@
 // register to receive this message
 ~p5Out = NetAddr("127.0.0.1", 47110);
-// test it with one message:
-~p5Out.sendMsg("/from_SC", 500);
 //ins/outs
 ~glassMicIn=8;
 ~voiceMicIn=9;
 ~hornDriverOut=2; // output to driver on soundcard out 3 !
-~referenceOut=1;
+~referenceOut=3;
+// ~hornDriverOut=0; // output to driver on soundcard out 3 !
+// ~referenceOut=1;
 
 // create a function called recordSample that executes the whole thing
 ~recordSample = {
@@ -29,7 +29,7 @@
 		"play that glassy shit".postln;
 		buf = Buffer.alloc(s, 65536, 1);
 		buf.write(audioFilepath,
-		"aiff", "int16", 0, 0, true);
+			"aiff", "int16", 0, 0, true);
 		// create the diskout node; making sure it comes after the source
 		rec = Synth.tail(nil, "recToDisk", ["bufnum", buf]);
 
@@ -127,7 +127,7 @@
 		}).add;
 
 		freqOsc = Synth.new("pitchFollow");
-		monitorOutput = Synth.new("in");
+		monitorOutput = Synth.new("gameplay", [\freq, killFreq, \amp, 0.02]);
 
 		// refTone.free;
 		"start game".postln;
@@ -203,7 +203,7 @@
 SynthDef("playback", { arg bufnum;
 	var freq, hasFreq, src;
 	//-> src = PlayBuf.ar(1, bufnum, doneAction:2, loop:0);
-	src = PlayBuf.ar(~referenceOut, bufnum, doneAction:2, loop:0);
+	src = PlayBuf.ar(1, bufnum, doneAction:2, loop:0)*0.5;
 	# freq, hasFreq = Tartini.kr(src,threshold: 0.1);
 	SendTrig.kr(Impulse.kr(100),0,freq);
 	Out.ar(~referenceOut, src);
@@ -215,9 +215,9 @@ SynthDef("deathByAudio",{arg freq;
 	rate = 0.2;
 	amp = 0.12;
 	// sweep = SinOsc.ar(freq)+SinOsc.ar(rate))*0.15;
-	sweep = SinOsc.ar(freq,0,amp*EnvGen.kr(env, doneAction:2));
+	sweep = SinOsc.ar(freq,0,amp)*EnvGen.kr(env, doneAction:2);
 	// Out.ar(~hornDriverOut,sweep*EnvGen.kr(env, doneAction:2));
-	Out.ar(~hornDriverOut,Limiter.ar(LPF.ar(HPF.ar(sweep,400),1000), amp, 0.01));
+	Out.ar(~hornDriverOut,sweep); //Limiter.ar(LPF.ar(HPF.ar(sweep,400),1000), amp, 0.01));
 }).send(s);
 
 
@@ -247,13 +247,19 @@ SynthDef("recToDisk", {arg bufnum;
 }).send(s);
 
 //basic mic out to monitor synth
-SynthDef("in", {
-	Out.ar(~referenceOut, 7*LPF.ar(HPF.ar(In.ar(~voiceMicIn),400),1000));
+SynthDef("gameplay", {arg freq,amp,gate;
+	var env, envgen;
+     env = Env.asr(1, 1, 1, 'sin');
+	envgen = EnvGen.kr(env, gate, doneAction: 2);
+	//monitor mic
+	Out.ar(~referenceOut, LPF.ar(HPF.ar(In.ar(~voiceMicIn),400),1000));
+	//	Out.ar(~referenceOut, LPF.ar(HPF.ar(In.ar(~voiceMicIn),400),1000)+ SinOsc.ar(freq,0,amp)*envgen);
+	//sine tone mix
 	//Out.ar(0, SoundIn.ar(0)*0.2);
 }).load(s);
 
 //s.reboot
 //			~buf = Buffer.read(s, "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff");
 /*
-Synth.new("in");
+Synth.new("gameplay");
 */

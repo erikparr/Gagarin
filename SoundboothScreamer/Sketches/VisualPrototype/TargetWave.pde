@@ -28,6 +28,10 @@ class TargetWave {
   void update(Boolean active){
     pushMatrix();
     pushStyle();
+    if(inFreq<targetFreq)
+    drawArrowUp();
+    if(inFreq>targetFreq)
+    drawArrowDown();
     rectMode(CENTER);
     // stroke(255, 235, 22);
     stroke(255);
@@ -66,6 +70,24 @@ shape(line,0,0);
       }
     }
 
+void drawArrowUp(){
+  pushMatrix();
+  translate(width-(width/7),-100);
+  stroke(255);
+line(0,0,100,-100);
+line(100,-100,200,0);
+popMatrix();
+}
+
+void drawArrowDown(){
+  pushMatrix();
+  translate(width-(width/7),100);
+
+  stroke(255);
+line(0,0,100,100);
+line(100,100,200,0);
+popMatrix();
+}
 
     void targetCount(){
       tCount = millis()-tStamp;
