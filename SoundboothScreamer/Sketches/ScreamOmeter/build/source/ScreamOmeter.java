@@ -17,7 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStream; 
 import java.io.IOException; 
 
-public class VisualPrototype extends PApplet {
+public class ScreamOmeter extends PApplet {
 
 /*Todo:
 - difficulty w/ targetThresh
@@ -82,7 +82,7 @@ public Boolean startSound ;
 public Boolean playIntro;
 public Boolean playGame;
 public Boolean playOutro;
-float gameDuration = 90;
+public float gameDuration = 60;
 int difficultyMode=1; //0 = easy, 1 = medium, 2 = difficult
 float outroTime = 5; //time on gameover/highscore screen
 
@@ -91,9 +91,10 @@ public boolean sketchFullScreen() {
 }
 
 public void setup() {
-  size(1920,1080, P2D); // 1600 x 900
+  size(1600, 900, P2D); // 1600 x 900
   noCursor();
   s = loadShape("logo.svg");
+  smooth(8);
   // font = createFont("GillSans", 48);
   font = createFont("EMprintW01-Regular", 110);
   minim = new Minim(this);
@@ -128,12 +129,12 @@ public void draw() {
   if(playIntro){
     intro.update();
     }else if(playGame){
- //      s.disableStyle();
- //      fill(255,255,255, 255);
- //      stroke(255);
- //      smooth();
- // shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
-
+      pushStyle();
+      // text(mouseX+" "+mouseY,100,100);
+      // s.disableStyle();
+      // fill(EmRed);
+ shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
+ popStyle();
       panel.wavePanel();
       playTimer = (millis()-tStampPlay)*0.001f;
 
@@ -184,14 +185,13 @@ public void draw() {
         if(theOscMessage.checkAddrPattern("/target")==true) {
           //get target frequency of glass from SC
           targetFreq = theOscMessage.get(0).floatValue();
-          println("targetFreq: "+targetFreq);
           minFreq = targetFreq-targetThresh; //set min and max freq to target frequency from SC
           maxFreq = targetFreq+targetThresh;
         }
         if(theOscMessage.checkAddrPattern("/pitch")==true && targetFreq>0) {
           // typetag = theOscMessage.typetag();
           inFreq = theOscMessage.get(0).floatValue(); //
-          inFreq = targetFreq; //
+          // inFreq = targetFreq; //
         }
       }
 
@@ -241,11 +241,12 @@ public void draw() {
             }
             }else{
               sendOsc("/reset", 1);
-              text("Try again later", width/3,height/2);
+              text("Sorry, try again later", width/4,height/2);
             }
             println(outroTimer);
             if(outroTimer>=outroTime){
               resetGame();
+              setDifficultyMode();
             }
           }
 
@@ -264,12 +265,12 @@ public void draw() {
             if(difficultyMode==1)
             targetThresh = random(5,10);
             if(difficultyMode==2)
-            targetThresh = random(1,3);
+            targetThresh = random(1,6);
 }
           //buttons in booth work like simulated keyboards
           public void keyPressed() {
-
-            if (key == TAB) {
+//tab is for record
+            if (key == ' ') {
               println("tab");
               sendOsc("/1/toggle1", b1Val);
               if(b1Val==0)
@@ -277,13 +278,27 @@ public void draw() {
               else
               b1Val=0;
             }
+            //q is for reference tone
             if (key == 'q') {
               sendOsc("/oscRefTone", 1);
             }
-            if (key == '5') {
+            // 5 is to start game
+
+            if (key == 'a') {
               playIntro = true;
             }
-          }
+            // XX is for easy mode
+            if (key == '1') {
+              difficultyMode = 0;
+            }
+            // xx is for medium
+            if (key == 'c') {
+              difficultyMode = 1;
+            }
+            // XX is for difficult
+            if (key == '5') {
+              difficultyMode = 2;
+            }          }
 JSONObject highscore;
 int defaultHighscore = 60;
 Boolean hasHighscore=false;
@@ -365,7 +380,7 @@ class IntroScreen{
       panel.textTitles("Try to beat the high score", currentHiscore+" sec");
       pushMatrix();
       translate(width/2, height- height/4);
-      panel.drawTimerPanel(lerp(0,currentHiscore, min(1.0f,(timer)-frame2)));
+      panel.drawTimerPanel(lerp(0,currentHiscore, min(1.0f,(timer)-frame2)),false);
       popMatrix();
     }
 
@@ -381,112 +396,6 @@ if(timer>startTime){
 
   public void reset(){
     isActive = false;
-  }
-}
-class LoudnessMonitor {
-
-  AudioInput in;
-  float amp;
-  float avg;
-  float flashFreq =0;
-  String loudMsg="";
-  int wd, ht, px, py;
-  float[] avgAmp = new float[128]; // store the last 1024 amplitude values in an array, to get average
-  float flashCol;
-
-  public void init(int x, int y, int width, int height){
-    wd = width;
-    ht = height;
-    px = x;
-    py = y;
-  }
-
-  public void update(){
-    pushMatrix();
-    // stroke(0);
-    // fill(65*0.6,70*0.6,80*0.6);
-    // rect(0,0,mouseX,mouseY,7);
-
-    calcAverage();
-    translate(px,py);
-    textSize(42);
-    fill(200);
-    text(loudMsg, -wd*3,-ht*3);
-
-    noFill();
-    stroke(150);
-    amp = in.mix.level();
-    noStroke();
-
-    drawGradient(0,0,(int)min(wd+amp*1000,200),EmGrad1,EmGrad2);
-    // fill(color(map(avg,0.001,0.03,50,255), 50,50));
-    // if(flashCol==255)
-    // flashCol =50;
-
-    // ellipse(0, 0, min(wd+amp*1000,200), min(ht+amp*1000,200));
-    stroke(0);
-    loudnessText();
-
-    popMatrix();
-  }
-
-  public void calcAverage(){
-    float sum=0;
-    avgAmp[avgAmp.length-1] = amp;
-
-    for(int i = 0; i<avgAmp.length-1; i++) {
-      avgAmp[i] = avgAmp[i+1];
-      sum = (sum+avgAmp[i]);
-    }
-
-    avg = sum/avgAmp.length;
-    flashFreq = flashFreq+ avg;
-    if(flashFreq>0.1f){
-      flashCol = 255;
-      flashFreq=0;
-    }
-
-  }
-
-  public void drawGradient(float x, float y, int rad, int c1, int c2) {
-    float maxRad = 200;
-    float r1 = red(c1);
-    float g1 = green(c1);
-    float b1 = blue(c1);
-    float r2 = red(c2);
-    float g2 = green(c2);
-    float b2 = blue(c2);
-    println(r1+" "+g1+" "+b1);
-    println(r2+" "+g2+" "+b2);
-    println("-");
-
-    for (int r = rad; r > 0; --r) {
-      println(map(r,maxRad,0,r1,r2)+" "+map(r,maxRad,0,g1,g2)+" "+map(r,maxRad,0,b1,b2));
-
-      fill(map(r,maxRad,0,r1,r2), map(r,maxRad,0,g1,g2), map(r,maxRad,0,b1,b2));
-      ellipse(x, y, r, r);
-    }
-  }
-
-  public void loudnessText(){
-
-    if(avg>0.002f){
-      loudMsg = "Very Quiet...";
-    }
-    if(avg>0.01f){
-      loudMsg = "Sing louder ...";
-    }
-    if(avg>0.02f){
-      loudMsg = "Keep going!";
-    }
-    if(avg>0.03f){
-      loudMsg = "That's LOUD!!!";
-    }
-    if(avg<0.002f){
-      loudMsg = "Start singing...";
-
-    }
-
   }
 }
 class OutroScreen{
@@ -562,6 +471,7 @@ class Panel {
 
 
   public void wavePanel(){
+    int numOffset = 30;
     //set timestamp once per game
     if(!isActive){
       tStampPlay = millis();
@@ -579,13 +489,16 @@ class Panel {
     wave.update();
     popMatrix();
     popMatrix();
+    pushMatrix();
+    translate( width/12 +86,(height)-(height/3.5f)+(height/10)+20);
+    panel.drawTimerPanel(lerp(0,gameDuration,(millis()-tStampPlay)*(1/(gameDuration*1000))),true);
+    popMatrix();
     fill(EmSilver);
-    textSize(42);
-    text(" Time:", width/12, (height)-(height/4));
-    textSize(136);
-    text((int)playTimer, width/12, (height)-(height/4)+(height/10));
-    textSize(92);
-    text(" sec", width/5.5f, (height)-(height/4)+(height/8));
+    if(playTimer>=10)numOffset=0;
+    textSize(86);
+    text((int)playTimer, numOffset+width/12, (height)-(height/4)+(height/10));
+    textSize(22);
+    text(" sec", 220,1000);
 // image(logo,width -(width/4), (height)-(height/4)+(height/10));
   // s.disableStyle();
   // fill(255,255,255, map(mouseX, 0, width, 0, 255));
@@ -609,7 +522,7 @@ class Panel {
   }
 
   public void textBox(String text, int w, int h, int textSize, int numLines){
-    int offset = 40;
+    int offset = 45;
     int wd = 3;
     textSize(textSize);
     // stroke(EmBlue);
@@ -640,16 +553,20 @@ class Panel {
   //
   // }
 
-  public void drawTimerPanel(float currentTime){
+  public void drawTimerPanel(float currentTime, boolean largeTimer){
+    int inner = 100;
+    int outer = 225;
+    int tCol = 225;
+    // if(largeTimer){inner=190;outer=275;tCol=150;}
     pushStyle();
     noStroke();
     float offset = (1.5f*PI);
-    fill(EmLiteBlue);
-    ellipse(0,0,225,225);
-    fill(255);
-    arc(0,0, 225, 225, 0+offset, map(currentTime, 90, 0,(2*PI)+offset, 0+offset), PIE);
-    fill(EmBlueGrad);
-    ellipse(0,0,100,100);
+    fill(30);
+    ellipse(0,0,outer,outer);
+    fill(tCol);
+    arc(0,0, outer, outer, 0+offset, map(currentTime, gameDuration, 0,(2*PI)+offset, 0+offset), PIE);
+    fill(0);
+    ellipse(0,0,inner,inner);
     popStyle();
   }
 
@@ -682,6 +599,8 @@ class TargetWave {
       line.vertex(i,i,0);
     }
     line.endShape();
+    line.setStrokeWeight(5);
+
 
   }
 
@@ -716,6 +635,9 @@ shape(line,0,0);
     }
     popStyle();
     popMatrix();
+    stroke(255);
+    text(count,100,100);
+
   }
 
   public void updateTimer(){
@@ -769,7 +691,6 @@ popMatrix();
         wavetable[i]=sin(count+i*0.01f);
         count=count+0.00025f;
         // wavetable[i] = wavetable[i+1];
-        // println(wavetable[i]);
 
       }
       // wavetable[wavetable.length-1]=sin(millis()*10);
@@ -798,6 +719,7 @@ popMatrix();
      }
     //  println(line.getVertexCount());
      line.endShape();
+     line.setStrokeWeight(5);
    }
 
    public void update()
@@ -815,7 +737,7 @@ shape(line,0,0);
    }
  }
   static public void main(String[] passedArgs) {
-    String[] appletArgs = new String[] { "VisualPrototype" };
+    String[] appletArgs = new String[] { "ScreamOmeter" };
     if (passedArgs != null) {
       PApplet.main(concat(appletArgs, passedArgs));
     } else {

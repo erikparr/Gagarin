@@ -22,6 +22,8 @@ class TargetWave {
       line.vertex(i,i,0);
     }
     line.endShape();
+    line.setStrokeWeight(5);
+
 
   }
 
@@ -56,6 +58,9 @@ shape(line,0,0);
     }
     popStyle();
     popMatrix();
+    stroke(255);
+    text(count,100,100);
+
   }
 
   void updateTimer(){
@@ -109,7 +114,6 @@ popMatrix();
         wavetable[i]=sin(count+i*0.01);
         count=count+0.00025;
         // wavetable[i] = wavetable[i+1];
-        // println(wavetable[i]);
 
       }
       // wavetable[wavetable.length-1]=sin(millis()*10);

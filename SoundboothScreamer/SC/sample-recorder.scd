@@ -1,6 +1,7 @@
 // register to receive this message
 ~p5Out = NetAddr("127.0.0.1", 47110);
 //ins/outs
+~isMachineMac = 0; //!!! Make sure machine is set to right OS, pc = false, mac = true
 ~glassMicIn=8;
 ~voiceMicIn=9;
 ~hornDriverOut=2; // output to driver on soundcard out 3 !
@@ -22,6 +23,8 @@
 	killShot, oscKill, playTrig,breakGlass,startAgain,
 	//paths
 	audioFilepath = "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff";
+	// audioFilepath = "C:\\Users\\gagarin\\Documents\\Gagarin-master\\SoundboothScreamer\\SC\\samples\\diskouttest.aiff";
+
 	//-- onStart routine to record----------------------------------
 
 	onStart = 	Routine({
@@ -62,7 +65,7 @@
 				freqs = freqs.add(newFreq);});
 		}).add;
 		1.wait; // do we need to wait for buffer to load?
-		"playing..".postln;
+		// "playing..".postln;
 		rtAnalyze = Synth(\playback, [\bufnum, ~buf.bufnum]);
 		~buf.duration.wait;
 		freqTrig.free;
@@ -113,6 +116,7 @@
 	});
 	//-- play the game via Processing----
 	startGame = Routine({
+		"playing...".postln;
 		// getFreqRange.stop;
 		//send target frequency to Processing
 		~p5Out.sendMsg( "/target", targetFreq.asFloat);

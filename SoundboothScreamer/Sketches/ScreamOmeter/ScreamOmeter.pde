@@ -61,7 +61,7 @@ public Boolean startSound ;
 public Boolean playIntro;
 public Boolean playGame;
 public Boolean playOutro;
-float gameDuration = 90;
+public float gameDuration = 60;
 int difficultyMode=1; //0 = easy, 1 = medium, 2 = difficult
 float outroTime = 5; //time on gameover/highscore screen
 
@@ -70,9 +70,10 @@ boolean sketchFullScreen() {
 }
 
 void setup() {
-  size(1920,1080, P2D); // 1600 x 900
+  size(1600, 900, P2D); // 1600 x 900
   noCursor();
   s = loadShape("logo.svg");
+  smooth(8);
   // font = createFont("GillSans", 48);
   font = createFont("EMprintW01-Regular", 110);
   minim = new Minim(this);
@@ -107,12 +108,12 @@ void draw() {
   if(playIntro){
     intro.update();
     }else if(playGame){
- //      s.disableStyle();
- //      fill(255,255,255, 255);
- //      stroke(255);
- //      smooth();
- // shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
-
+      pushStyle();
+      // text(mouseX+" "+mouseY,100,100);
+      // s.disableStyle();
+      // fill(EmRed);
+ shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
+ popStyle();
       panel.wavePanel();
       playTimer = (millis()-tStampPlay)*0.001;
 
@@ -163,14 +164,13 @@ void draw() {
         if(theOscMessage.checkAddrPattern("/target")==true) {
           //get target frequency of glass from SC
           targetFreq = theOscMessage.get(0).floatValue();
-          println("targetFreq: "+targetFreq);
           minFreq = targetFreq-targetThresh; //set min and max freq to target frequency from SC
           maxFreq = targetFreq+targetThresh;
         }
         if(theOscMessage.checkAddrPattern("/pitch")==true && targetFreq>0) {
           // typetag = theOscMessage.typetag();
           inFreq = theOscMessage.get(0).floatValue(); //
-          inFreq = targetFreq; //
+          // inFreq = targetFreq; //
         }
       }
 
@@ -220,11 +220,12 @@ void draw() {
             }
             }else{
               sendOsc("/reset", 1);
-              text("Try again later", width/3,height/2);
+              text("Sorry, try again later", width/4,height/2);
             }
             println(outroTimer);
             if(outroTimer>=outroTime){
               resetGame();
+              setDifficultyMode();
             }
           }
 
@@ -243,12 +244,12 @@ void draw() {
             if(difficultyMode==1)
             targetThresh = random(5,10);
             if(difficultyMode==2)
-            targetThresh = random(1,3);
+            targetThresh = random(1,6);
 }
           //buttons in booth work like simulated keyboards
           void keyPressed() {
-
-            if (key == TAB) {
+//tab is for record
+            if (key == ' ') {
               println("tab");
               sendOsc("/1/toggle1", b1Val);
               if(b1Val==0)
@@ -256,10 +257,24 @@ void draw() {
               else
               b1Val=0;
             }
+            //q is for reference tone
             if (key == 'q') {
               sendOsc("/oscRefTone", 1);
             }
-            if (key == '5') {
+            // 5 is to start game
+
+            if (key == 'a') {
               playIntro = true;
             }
-          }
+            // XX is for easy mode
+            if (key == '1') {
+              difficultyMode = 0;
+            }
+            // xx is for medium
+            if (key == 'c') {
+              difficultyMode = 1;
+            }
+            // XX is for difficult
+            if (key == '5') {
+              difficultyMode = 2;
+            }          }
