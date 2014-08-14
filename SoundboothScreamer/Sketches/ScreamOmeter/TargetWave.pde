@@ -59,7 +59,6 @@ shape(line,0,0);
     popStyle();
     popMatrix();
     stroke(255);
-    text(count,100,100);
 
   }
 
@@ -111,8 +110,7 @@ popMatrix();
 
     void updateSinewave(){
       for(int i = 0; i<wavetable.length-1; i++) {
-        wavetable[i]=sin(count+i*0.01);
-        count=count+0.00025;
+        wavetable[i]=sin((frameCount*0.1)+i*0.01);
         // wavetable[i] = wavetable[i+1];
 
       }

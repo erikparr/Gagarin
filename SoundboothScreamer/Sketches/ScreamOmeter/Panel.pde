@@ -56,7 +56,6 @@ class Panel {
 
 
   void wavePanel(){
-    int numOffset = 30;
     //set timestamp once per game
     if(!isActive){
       tStampPlay = millis();
@@ -79,11 +78,10 @@ class Panel {
     panel.drawTimerPanel(lerp(0,gameDuration,(millis()-tStampPlay)*(1/(gameDuration*1000))),true);
     popMatrix();
     fill(EmSilver);
-    if(playTimer>=10)numOffset=0;
-    textSize(86);
-    text((int)playTimer, numOffset+width/12, (height)-(height/4)+(height/10));
+    textSize(40);
+    text(nf(playTimer, 2, 2), 27+width/12, (height)-(height/6));
     textSize(22);
-    text(" sec", 220,1000);
+    text(" sec", 194,785);
 // image(logo,width -(width/4), (height)-(height/4)+(height/10));
   // s.disableStyle();
   // fill(255,255,255, map(mouseX, 0, width, 0, 255));
@@ -142,7 +140,7 @@ class Panel {
     int inner = 100;
     int outer = 225;
     int tCol = 225;
-    // if(largeTimer){inner=190;outer=275;tCol=150;}
+    if(largeTimer){inner=125;outer=255;}
     pushStyle();
     noStroke();
     float offset = (1.5*PI);
