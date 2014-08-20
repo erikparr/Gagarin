@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class ScreamOmeter extends PApplet {
 
-/*Todo:
+  /*Todo:
 - difficulty w/ targetThresh
 */
  // audio library -- used for audio visualization only
@@ -84,12 +84,14 @@ public Boolean playIntro;
 public Boolean playGame;
 public Boolean playOutro;
 public float gameDuration = 60;
+Boolean receivedReadyMsg = false;
+int errorMsgStamp =-10000; // for reporting receivedReadyMsg error
 int difficultyMode=1; //0 = easy, 1 = medium, 2 = difficult
 float outroTime = 10; //time on gameover/highscore screen
 
-public boolean sketchFullScreen() {
-  return true;
-}
+//boolean sketchFullScreen() {
+//  return true;
+//}
 
 public void setup() {
   size(1600, 900, P2D); // 1600 x 900
@@ -130,9 +132,7 @@ public void setup() {
 public void draw() {
   //setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
    background(0);
-   shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
-  //  text(map(mouseX,0,width,-100,100),100,100);
-// text(mouseX+" "+mouseY,100,100);
+   checkIfReady();
   if(playIntro){
     intro.update();
     }else if(playGame){
@@ -157,7 +157,7 @@ public void draw() {
           pushStyle();
           fill(EmSilver);
           textAlign(CENTER, CENTER);
-          text("Press Start", width/2,height/2);
+          text("START", width/2,height/2);
           popStyle();
         }
 
@@ -188,10 +188,29 @@ public void draw() {
         }
       }
 
+      public void checkIfReady(){
+         if(millis()-errorMsgStamp<10000){
+     pushStyle();
+     fill(EmRed);
+     textAlign(CENTER, CENTER);
+     textSize(24);
+     text("Not ready. Please notify attendant.",width/2,height-200);
+     popStyle();
+   }
+}
 
       public void oscEvent(OscMessage theOscMessage) {
         /* print the address pattern and the typetag of the received OscMessage */
         // println(theOscMessage.get(1).floatValue());
+        //if receieve "isReady" is true (1), can start game, or else print message to screen
+                if(theOscMessage.checkAddrPattern("/isReady")==true) {
+//                  println("is ready: "+theOscMessage.get(0).floatValue());
+                   if(PApplet.parseInt(targetFreq = theOscMessage.get(0).floatValue())==0)
+                   receivedReadyMsg = false;
+                   else
+                   receivedReadyMsg = true;
+                   
+                }
         if(theOscMessage.checkAddrPattern("/target")==true) {
           //get target frequency of glass from SC
           targetFreq = theOscMessage.get(0).floatValue();
@@ -218,6 +237,7 @@ public void draw() {
 
       public void resetGame(){
         println("resetting");
+        receivedReadyMsg = false;
         playIntro = false;
         playGame = false;
         playOutro = false;
@@ -234,12 +254,12 @@ public void draw() {
         if(hasWon){
           println("hasHS: "+hasHighscore);
           if(hiscore.saveHighscore(playTimer) || hiscore.hasHighscore()){
-            outroTime = 30; //show for longer duration;
+            outroTime = 60; //show for longer duration;
             pushStyle();
             fill(EmSilver);
             textAlign(CENTER, CENTER);
             textSize(64);
-            text("New high score!",width/2,height/2-(height/8));
+            text("New record score!",width/2,height/2-(height/8));
             textSize(136);
             text(nf(playTimer, 2, 2) + " sec",  width/2,height/2);
             player.play();
@@ -312,7 +332,10 @@ public void draw() {
             // 5 is to start game
 
             if (key == 'a') {
-              playIntro = true;
+              if(receivedReadyMsg)
+                playIntro = true;
+                else
+                errorMsgStamp = millis();
             }
             // XX is for easy mode
             if (key == '1') {
@@ -404,7 +427,15 @@ class IntroScreen{
       panel.textTitles("Welcome to the ScreamOmeter", "Show your energy!");
     }
     if(timer>frame2 && timer<startTime){
-      panel.textTitles("Try to beat the high score", nf(currentHiscore,2,2)+" sec");
+      pushMatrix();
+              pushStyle();
+              fill(EmSilver);
+              textSize(92);
+              textAlign(CENTER, CENTER);
+      text("Scream to break the glass",width/2,height/2-310);
+      popStyle(); 
+      popMatrix();
+      panel.textTitles("Try to beat the record score", nf(currentHiscore,2,2)+" sec");
       pushMatrix();
       translate(width/2, height- height/4);
       panel.drawTimerPanel(lerp(0,currentHiscore, min(1.0f,(timer)-frame2)),false);
@@ -521,7 +552,7 @@ class Panel {
     popMatrix();
     fill(EmSilver);
     textSize(40);
-    text(nf(playTimer, 2, 2), 27+width/12, (height)-(height/6));
+    text(nf(playTimer, 2, 2), 168, (height)-(height/6));
     textSize(22);
     text(" sec", 194,785);
 // image(logo,width -(width/4), (height)-(height/4)+(height/10));
@@ -611,6 +642,7 @@ class TargetWave {
   boolean lockFreq = false;
   int tStamp=0;
   int tCount=0;
+  int oscCount=0;
   int winTime = 5000;
   PShape line;
 
@@ -632,16 +664,16 @@ class TargetWave {
   public void update(Boolean active){
     pushMatrix();
     pushStyle();
-    if(inFreq<targetFreq)
+    if(inFreq<minFreq)
     drawArrowUp();
-    if(inFreq>targetFreq)
+    if(inFreq>maxFreq)
     drawArrowDown();
     rectMode(CENTER);
     // stroke(255, 235, 22);
     stroke(255);
     updateSinewave();
     updateTimer();
-    strokeWeight(2.5f);
+    strokeWeight(3.5f);
     // draw the waveforms so we can see what we are monitoring
     for(int i = 0; i < wavetable.length; i++)
     {
@@ -670,7 +702,9 @@ shape(line,0,0);
       tStamp = millis();
       targetCount();
       inRange = true;
-      }else{
+      }else if(inRange){
+        //if we've gone out of range, send osc msg to set reference "mixTone" inst to amplitude=0
+         sendOsc("/oscMixTone", 0); //send osc msg to SC to control mix amplitude of reference glassbreak tone
         inRange = false;
         tCount=0;
       }
@@ -697,6 +731,10 @@ popMatrix();
 
     public void targetCount(){
       tCount = millis()-tStamp;
+      if(round(tCount*0.01f)>oscCount){
+      sendOsc("/oscMixTone", PApplet.parseInt(map(tCount,0,winTime,0,100))); //send osc msg to SC to control mix amplitude of reference glassbreak tone
+    }
+      oscCount = round(tCount*0.01f);
       if(tCount>=winTime-1000){
         lockFreq=true;
         sendOsc("/killTone", 1);

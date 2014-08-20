@@ -128,5 +128,6 @@ popMatrix();
     void reset(){
        inRange = false;
        lockFreq = false;
+       tCount = 0;
     }
   }
