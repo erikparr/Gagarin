@@ -12,22 +12,23 @@
 // create a function called recordSample that executes the whole thing
 ~recordSample = {
 	//record vars
-	var win, playButton, oscRecord, adrs, onStart, onStop, resetAll, play, rec, buf,freeAll,
+	var win, playButton, oscRecord, adrs, recordState=0, onStart, onStop, resetAll, play, rec, buf, playbuf, freeAll,
 	//analysis vars
 	analyzeFreq, freqs, freqTrig, bag, dict, target, killFreq, oscAnalyze,rtAnalyze,
 	//get frequency range vars
 	getFreqRange,total, sIndex, eIndex, range, mRange, count, startFreq, endFreq, avgFreq, targetFreq, pitchVal,
 	// visualizer vars
-	toP5osc,freqOsc, refTone, startGame, oscRefTone, monitorOutput,
+	toP5osc,freqOsc, refTone, startGame, oscRefTone, monitorOutput, playMixtone,oscMixTone,
 	//high amplitude glass killing machine vars
-	killShot, oscKill, playTrig,breakGlass,startAgain,
+	killShot, oscKill, breakGlass,startAgain,
 	//paths
-	audioFilepath = "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff";
+	 audioFilepath = "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff";
 	// audioFilepath = "C:\\Users\\gagarin\\Documents\\Gagarin-master\\SoundboothScreamer\\SC\\samples\\diskouttest.aiff";
 
 	//-- onStart routine to record----------------------------------
 
 	onStart = 	Routine({
+		analyzeFreq.reset;
 		breakGlass.reset;
 		"play that glassy shit".postln;
 		buf = Buffer.alloc(s, 65536, 1);
@@ -45,7 +46,7 @@
 		play.free;
 		buf.close;
 		buf.free;
-		// ~buf = Buffer.read(s, "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff");
+		// playbuf = Buffer.read(s, "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff");
 
 		0.1.wait;
 		analyzeFreq.play;
@@ -53,10 +54,11 @@
 
 	//---analyze sample to get fundamental freqency-------------
 	analyzeFreq = Routine({
+		onStart.reset; onStop.reset; getFreqRange.reset;
 		"analyzing...".postln;
 		0.1.wait;
 		//-- load newly recorded sound sample into buffer
-		~buf = Buffer.read(s, audioFilepath);
+		playbuf = Buffer.read(s, audioFilepath);
 		//-----
 		freqs = Array.newClear;
 		freqTrig = OSCresponderNode(s.addr,'/tr',{ arg time, responder, msg;
@@ -65,9 +67,9 @@
 				freqs = freqs.add(newFreq);});
 		}).add;
 		1.wait; // do we need to wait for buffer to load?
-		// "playing..".postln;
-		rtAnalyze = Synth(\playback, [\bufnum, ~buf.bufnum]);
-		~buf.duration.wait;
+		 "playing analysis..".postln;
+		rtAnalyze = Synth(\playback, [\bufnum, playbuf.bufnum]);
+		playbuf.duration.wait;
 		freqTrig.free;
 		"finished playing".postln;
 		rtAnalyze.free;
@@ -81,7 +83,9 @@
 		killFreq.postln;
 		2.wait;
 		"get freq range...".postln;
-		getFreqRange.value;
+		//if we have a bad recording, reset and try again, otherwise continue to getFreqRange routine
+		if(freqs[0].isNil,{~p5Out.sendMsg( "/isReady", 0.0); freeAll.value;},
+			{~p5Out.sendMsg( "/isReady", 1.0);getFreqRange.value;});
 	});
 	//-----get most stabile frequency range-----------------------
 	getFreqRange = Routine({
@@ -131,7 +135,8 @@
 		}).add;
 
 		freqOsc = Synth.new("pitchFollow");
-		monitorOutput = Synth.new("gameplay", [\freq, killFreq, \amp, 0.02]);
+		monitorOutput = Synth.new("gameplay", [\freq, killFreq, \amp, 0.02]); // not using freq arg
+		playMixtone = Synth.new("mixTone", [\freq, killFreq, \amp, 0]);
 
 		// refTone.free;
 		"start game".postln;
@@ -139,6 +144,7 @@
 	//-- play the game via Processing----
 	breakGlass = Routine({
 		monitorOutput.free;
+		playMixtone.free;
 		startGame.stop;
 		"avgFreq: ".post;
 		avgFreq.postln;
@@ -147,21 +153,27 @@
 		// killShot.free; "killed.".postln;
 		"resetting...".postln;
 		resetAll.value;
-		// refTone.free; freqOsc.free; toP5osc.free; playTrig.free; killShot.free; oscRecord.free; oscAnalyze.free;
-		// oscKill.free; freeAll.free; ~buf.free; "its freed".postln;
-
+		freeAll.value;
 	});
 
 	resetAll = Routine({
-		onStart.reset; onStop.reset; analyzeFreq.reset; getFreqRange.reset; startGame.reset;
+		monitorOutput.free;
+		playMixtone.free;
+		startGame.stop;
+		onStart.reset; onStop.reset; analyzeFreq.reset; getFreqRange.reset; startGame.reset;//killShot.free;
 	});
-	//-----TouchOSC setup------------------------------------------
+
+	freeAll = Routine({ refTone.free; freqOsc.free; killShot.free; playMixtone.free;
+		 oscKill.free; playbuf.free; buf.free; "its freed".postln; });
+
+
+	//-----processing OSC setup------------------------------------------
 	adrs = NetAddr("localhost", 57120); // the url should be the one of computer of app 2 (or nil)
 	oscRecord = OSCFunc({ arg msg, time, addr, recvPort;
 		// [msg, time, addr, recvPort].postln;
-		if(msg[1]==1,
-			{onStart.value; "recording...".postln},
-			{onStop.play; "stopped recording".postln; });
+		if(recordState==0,
+			{onStart.value; "recording...".postln; recordState=1;},
+			{onStop.play; "stopped recording".postln; recordState=0;});
 		adrs }, '/1/toggle1');
 
 	oscAnalyze = OSCFunc({ arg msg, time, addr, recvPort;
@@ -186,24 +198,23 @@
 		});
 		adrs }, '/killTone');
 
+	//cleanup when player loses
+
+	//on osc message from TargetWave.pde, mix reference tone in to monitor speaker
+	oscMixTone = OSCFunc({ arg msg, time, addr, recvPort;
+		playMixtone.set(\amp, msg[1]*0.01);
+		adrs }, '/oscMixTone');
+
 	startAgain = OSCFunc({ arg msg, time, addr, recvPort;
 		resetAll.value;
 		adrs }, '/reset');
 
-	freeAll = OSCFunc({ arg msg, time, addr, recvPort;
-		// [msg, time, addr, recvPort].postln;
-		if(msg[1]==1,
-			{analyzeFreq.reset; onStart.reset; onStop.reset;
-				"resetting...".postln},
-			{ refTone.free; freqOsc.free; toP5osc.free; playTrig.free; killShot.free; oscRecord.free; oscAnalyze.free;
-				oscKill.free; freeAll.free; ~buf.free; "its freed".postln; });
-		adrs }, '/1/toggle4');
 };
 ~recordSample.value;
 
 //o.free;
 //----------synthdefs------------------------------------------------
-// Synth(\playback, [\bufnum, ~buf.bufnum]);
+// Synth(\playback, [\bufnum, playbuf.bufnum]);
 SynthDef("playback", { arg bufnum;
 	var freq, hasFreq, src;
 	//-> src = PlayBuf.ar(1, bufnum, doneAction:2, loop:0);
@@ -231,6 +242,13 @@ SynthDef("referenceTone", {arg freq;
 	Out.ar(~referenceOut, SinOsc.ar(freq)*0.25*EnvGen.kr(env, doneAction:2))
 }).load(s);
 
+//mix in sine tone to reference speaker at the "kill frequency"
+SynthDef("mixTone", {arg freq, amp=1;
+	var env;
+	env = Env([0,1.0,1.0,0],[0.2,1,0.5], 'sin');
+	Out.ar(~referenceOut, SinOsc.ar(freq)*0.1*amp)
+}).load(s);
+
 SynthDef("pitchFollow",{
 	var in, amp, freq, hasFreq, out;
 	in = In.ar(~voiceMicIn);
@@ -246,24 +264,24 @@ SynthDef("pitchFollow",{
 
 // this will record to the disk
 SynthDef("recToDisk", {arg bufnum;
-	DiskOut.ar(bufnum, In.ar(~glassMicIn));
+	DiskOut.ar(bufnum, LPF.ar(HPF.ar(In.ar(~glassMicIn),300),750));
 	//DiskOut.ar(bufnum, In.ar(0,1));
 }).send(s);
 
 //basic mic out to monitor synth
 SynthDef("gameplay", {arg freq,amp,gate;
 	var env, envgen;
-     env = Env.asr(1, 1, 1, 'sin');
+	env = Env.asr(1, 1, 1, 'sin');
 	envgen = EnvGen.kr(env, gate, doneAction: 2);
 	//monitor mic
-	Out.ar(~referenceOut, LPF.ar(HPF.ar(In.ar(~voiceMicIn),400),1000));
+	Out.ar(~referenceOut, LPF.ar(HPF.ar(In.ar(~voiceMicIn,1),400),1000));
 	//	Out.ar(~referenceOut, LPF.ar(HPF.ar(In.ar(~voiceMicIn),400),1000)+ SinOsc.ar(freq,0,amp)*envgen);
 	//sine tone mix
 	//Out.ar(0, SoundIn.ar(0)*0.2);
 }).load(s);
 
 //s.reboot
-//			~buf = Buffer.read(s, "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff");
+//			playbuf = Buffer.read(s, "/Users/erikwp/Documents/_Studio/2014-work/Gagarin/SoundboothScreamer/SC/samples/diskouttest.aiff");
 /*
 Synth.new("gameplay");
 */

@@ -44,7 +44,7 @@ public TargetWave tWave = new TargetWave();
 // public LoudnessMonitor loud = new LoudnessMonitor();
 public  Minim minim;
 public  AudioInput in;
-public  float targetFreq = 0;
+public  float targetFreq = 500;
 public int EmRed =  color(254,0,12);
 public int EmBlue =  color(12,71,157);
 public int EmBlueGrad =  color(6,117,190);
@@ -68,12 +68,13 @@ public PVector tWavePos;
 public PVector panelSize;
 public float minFreq;
 public float maxFreq;
-public int currentHiscore;
+public float currentHiscore;
 public float playTimer;
 public float tStampPlay;
 public float outroTimer;
 public float tStampOutro;
 public float inFreq; // input frequency from Supercollider
+float tStampTone=0;
 String typetag;
 float targetThresh;
 Boolean hasWon =false; //set to true when game has been won
@@ -84,7 +85,7 @@ public Boolean playGame;
 public Boolean playOutro;
 public float gameDuration = 60;
 int difficultyMode=1; //0 = easy, 1 = medium, 2 = difficult
-float outroTime = 5; //time on gameover/highscore screen
+float outroTime = 10; //time on gameover/highscore screen
 
 public boolean sketchFullScreen() {
   return true;
@@ -121,20 +122,25 @@ public void setup() {
   panel.init();
   hiscore.init(day(),month());
   resetGame();
+  minFreq = targetFreq-targetThresh; //set min and max freq to target frequency from SC
+  maxFreq = targetFreq+targetThresh;
+
 }
 
 public void draw() {
   //setGradient(0, 0, width, height, EmBlue, EmCyan, 1);
    background(0);
+   shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
+  //  text(map(mouseX,0,width,-100,100),100,100);
+// text(mouseX+" "+mouseY,100,100);
   if(playIntro){
     intro.update();
     }else if(playGame){
       pushStyle();
-      // text(mouseX+" "+mouseY,100,100);
       // s.disableStyle();
       // fill(EmRed);
- shape(s,width -(width/4), (height)-(height/4)+(height/10),263,50);
  popStyle();
+
       panel.wavePanel();
       playTimer = (millis()-tStampPlay)*0.001f;
 
@@ -143,26 +149,30 @@ public void draw() {
         playOutro=true;
         playGame=false;
         tStampOutro=millis();
-        println("start outro");
+        // println("start outro");
       }
       }else if(playOutro){
         outro();
         }else{
-          text("Press Start", width/3,height/2);
+          pushStyle();
+          fill(EmSilver);
+          textAlign(CENTER, CENTER);
+          text("Press Start", width/2,height/2);
+          popStyle();
         }
 
         if(startSound)
         oscStart();
 
         //display difficulty settings
-        if(playGame && playTimer<5){
-          if(difficultyMode==0)
-          text("Easy mode", 200,200);
-          if(difficultyMode==1)
-          text("Medium mode", 200,200);
-          if(difficultyMode==2)
-          text("Difficult mode", 200,200);
-        }
+        // if(playGame && playTimer<5){
+        //   if(difficultyMode==0)
+        //   text("Easy mode", 200,200);
+        //   if(difficultyMode==1)
+        //   text("Medium mode", 200,200);
+        //   if(difficultyMode==2)
+        //   text("Difficult mode", 200,200);
+        // }
 
       }
 
@@ -223,25 +233,39 @@ public void draw() {
         outroTimer = (millis()-tStampOutro)*0.001f;
         if(hasWon){
           println("hasHS: "+hasHighscore);
-          if(hiscore.saveHighscore((int)playTimer) || hiscore.hasHighscore()){
+          if(hiscore.saveHighscore(playTimer) || hiscore.hasHighscore()){
+            outroTime = 30; //show for longer duration;
+            pushStyle();
+            fill(EmSilver);
+            textAlign(CENTER, CENTER);
             textSize(64);
-            text("New high score",width/3,height/2-200);
-            textSize(110);
-            text((int)playTimer +" sec", width/3,height/2);
+            text("New high score!",width/2,height/2-(height/8));
+            textSize(136);
+            text(nf(playTimer, 2, 2) + " sec",  width/2,height/2);
             player.play();
             }else{
-              textSize(32);
-        text("         Your score", width/3,height/2);
-        textSize(110);
-        text((int)playTimer+ " sec", width/3,height/2+100);
+              outroTime = 5;
+              pushStyle();
+              fill(EmSilver);
+              textAlign(CENTER, CENTER);
+              textSize(64);
+              text("Your score", width/2,height/2-(height/8));
+              textSize(136);
+              text(nf(playTimer, 2, 2) + " sec", width/2,height/2);
+              popStyle();
             }
             if(breakGlass){
               sendOsc("/killTone", 1);
               breakGlass=false;
             }
             }else{
+              outroTime = 10; //show for longer duration;
               sendOsc("/reset", 1);
-              text("Sorry, try again later", width/4,height/2);
+              pushStyle();
+              fill(EmSilver);
+              textAlign(CENTER, CENTER);
+              text("Sorry, try again later", width/2,height/2);
+              popStyle();
             }
             println(outroTimer);
             if(outroTimer>=outroTime){
@@ -280,7 +304,10 @@ public void draw() {
             }
             //q is for reference tone
             if (key == 'q') {
+              if((millis()-tStampTone)>2000){ // player can only hear reference tone once every 2 seconds
               sendOsc("/oscRefTone", 1);
+              tStampTone = millis();
+            }
             }
             // 5 is to start game
 
@@ -300,7 +327,7 @@ public void draw() {
               difficultyMode = 2;
             }          }
 JSONObject highscore;
-int defaultHighscore = 60;
+float defaultHighscore = 60;
 Boolean hasHighscore=false;
 class Highscore{
 
@@ -311,17 +338,17 @@ class Highscore{
     String date = highscore.getString("date");
     // if we're on a new day, reset the highscore to the default
     if(date.equals(dateString) == false){
-      highscore.setInt("score", defaultHighscore);
+      highscore.setFloat("score", defaultHighscore);
       highscore.setString("date", dateString);
       saveJSONObject(highscore, "data/highscore.json");
     }
-    currentHiscore = highscore.getInt("score"); // set current highscore from json file
+    currentHiscore = highscore.getFloat("score"); // set current highscore from json file
 
   }
 
-  public Boolean saveHighscore(int pScore){ //(int pScore, String pName, String pPhone)
+  public Boolean saveHighscore(float pScore){ //(int pScore, String pName, String pPhone)
 // determine score ranking
-    int score = highscore.getInt("score");
+    float score = highscore.getInt("score");
 println("score: "+score+" player score: "+pScore);
     // String name = highscore.getString("name");
     // String phone = highscore.getString("phone");
@@ -329,13 +356,13 @@ println("score: "+score+" player score: "+pScore);
     if(pScore<score){
       println("new high score");
       hasHighscore = true; // if we reached a high score, we record the info and break out from loop
-      highscore.setInt("score", pScore);
+      highscore.setFloat("score", pScore);
       }
       saveJSONObject(highscore, "data/highscore.json");
       return hasHighscore;
     }
 
-  public int getCurrentHiscore(){
+  public float getCurrentHiscore(){
     return currentHiscore;
   }
 
@@ -377,7 +404,7 @@ class IntroScreen{
       panel.textTitles("Welcome to the ScreamOmeter", "Show your energy!");
     }
     if(timer>frame2 && timer<startTime){
-      panel.textTitles("Try to beat the high score", currentHiscore+" sec");
+      panel.textTitles("Try to beat the high score", nf(currentHiscore,2,2)+" sec");
       pushMatrix();
       translate(width/2, height- height/4);
       panel.drawTimerPanel(lerp(0,currentHiscore, min(1.0f,(timer)-frame2)),false);
@@ -449,10 +476,10 @@ class Panel {
 
   public void textTitles(String subTitle, String title){
     pushStyle();
-    textAlign(CENTER);
+    textAlign(CENTER,CENTER);
     fill(205);
     textSize(64);
-    text(subTitle, width/2, height/2 - (height/5));
+    text(subTitle, width/2, height/2 - (height/8));
     textSize(136);
     text(title, width/2, height/2);
     popStyle();
@@ -685,7 +712,7 @@ popMatrix();
 
     public void updateSinewave(){
       for(int i = 0; i<wavetable.length-1; i++) {
-        wavetable[i]=sin((frameCount*0.1f)+i*0.01f);
+        wavetable[i]=sin((frameCount*0.225f)+i*0.01f);
         // wavetable[i] = wavetable[i+1];
 
       }

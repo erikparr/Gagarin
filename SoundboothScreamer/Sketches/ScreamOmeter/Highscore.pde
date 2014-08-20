@@ -1,5 +1,5 @@
 JSONObject highscore;
-int defaultHighscore = 60;
+float defaultHighscore = 60;
 Boolean hasHighscore=false;
 class Highscore{
 
@@ -10,17 +10,17 @@ class Highscore{
     String date = highscore.getString("date");
     // if we're on a new day, reset the highscore to the default
     if(date.equals(dateString) == false){
-      highscore.setInt("score", defaultHighscore);
+      highscore.setFloat("score", defaultHighscore);
       highscore.setString("date", dateString);
       saveJSONObject(highscore, "data/highscore.json");
     }
-    currentHiscore = highscore.getInt("score"); // set current highscore from json file
+    currentHiscore = highscore.getFloat("score"); // set current highscore from json file
 
   }
 
-  Boolean saveHighscore(int pScore){ //(int pScore, String pName, String pPhone)
+  Boolean saveHighscore(float pScore){ //(int pScore, String pName, String pPhone)
 // determine score ranking
-    int score = highscore.getInt("score");
+    float score = highscore.getInt("score");
 println("score: "+score+" player score: "+pScore);
     // String name = highscore.getString("name");
     // String phone = highscore.getString("phone");
@@ -28,13 +28,13 @@ println("score: "+score+" player score: "+pScore);
     if(pScore<score){
       println("new high score");
       hasHighscore = true; // if we reached a high score, we record the info and break out from loop
-      highscore.setInt("score", pScore);
+      highscore.setFloat("score", pScore);
       }
       saveJSONObject(highscore, "data/highscore.json");
       return hasHighscore;
     }
 
-  int getCurrentHiscore(){
+  float getCurrentHiscore(){
     return currentHiscore;
   }
 
