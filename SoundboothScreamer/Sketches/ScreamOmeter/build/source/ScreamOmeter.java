@@ -99,7 +99,7 @@ public void setup() {
   s = loadShape("logo.svg");
   smooth(8);
   // font = createFont("GillSans", 48);
-  font = createFont("EMprintW01-Regular", 110);
+  font = createFont("QTSqBd.otf", 110);
   minim = new Minim(this);
   in = minim.getLineIn();
   player = minim.loadFile("applause.aiff");
@@ -209,7 +209,7 @@ public void draw() {
                    receivedReadyMsg = false;
                    else
                    receivedReadyMsg = true;
-                   
+
                 }
         if(theOscMessage.checkAddrPattern("/target")==true) {
           //get target frequency of glass from SC
@@ -424,28 +424,41 @@ class IntroScreen{
 
     timer = ((millis()-tStamp)*0.001f);
     if(timer>frame1 && timer<frame2){
-      panel.textTitles("Welcome to the ScreamOmeter", "Show your energy!");
-    }
-    if(timer>frame2 && timer<startTime){
+      // panel.textTitles("Welcome to the ScreamOmeter", "Show your energy!");
       pushMatrix();
-              pushStyle();
-              fill(EmSilver);
-              textSize(92);
-              textAlign(CENTER, CENTER);
-      text("Scream to break the glass",width/2,height/2-310);
-      popStyle(); 
+      pushStyle();
+      fill(EmSilver);
+      textSize(92);
+      textAlign(CENTER, CENTER);
+      text("SKRIK FOR A\u030a HOLDE GLASSET",width/2,height/2-310);
+      popStyle();
       popMatrix();
-      panel.textTitles("Try to beat the record score", nf(currentHiscore,2,2)+" sec");
+      panel.textTitles("Scream to break the glass", nf(currentHiscore,2,2)+" sec");
       pushMatrix();
       translate(width/2, height- height/4);
       panel.drawTimerPanel(lerp(0,currentHiscore, min(1.0f,(timer)-frame2)),false);
       popMatrix();
     }
+    // if(timer>frame2 && timer<startTime){
+    //   pushMatrix();
+    //           pushStyle();
+    //           fill(EmSilver);
+    //           textSize(92);
+    //           textAlign(CENTER, CENTER);
+    //   text("Scream to break the glass",width/2,height/2-310);
+    //   popStyle();
+    //   popMatrix();
+    //   panel.textTitles("Try to beat the record score", nf(currentHiscore,2,2)+" sec");
+    //   pushMatrix();
+    //   translate(width/2, height- height/4);
+    //   panel.drawTimerPanel(lerp(0,currentHiscore, min(1.0,(timer)-frame2)),false);
+    //   popMatrix();
+    // }
 
 if(timer>startTime){
   startSound = true;
   playGame = true;
-  playIntro = false;
+  playIntro = true;
   println("start game");
   println(second());
 }
@@ -761,6 +774,7 @@ popMatrix();
     public void reset(){
        inRange = false;
        lockFreq = false;
+       tCount = 0;
     }
   }
  class Waveform {

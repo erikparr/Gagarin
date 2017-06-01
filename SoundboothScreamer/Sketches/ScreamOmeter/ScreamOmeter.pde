@@ -78,7 +78,7 @@ void setup() {
   s = loadShape("logo.svg");
   smooth(8);
   // font = createFont("GillSans", 48);
-  font = createFont("EMprintW01-Regular", 110);
+  font = createFont("QTSqBd.otf", 110);
   minim = new Minim(this);
   in = minim.getLineIn();
   player = minim.loadFile("applause.aiff");
@@ -138,6 +138,7 @@ void draw() {
           textAlign(CENTER, CENTER);
           text("START", width/2,height/2);
           popStyle();
+
         }
 
         if(startSound)
@@ -188,7 +189,7 @@ void draw() {
                    receivedReadyMsg = false;
                    else
                    receivedReadyMsg = true;
-                   
+
                 }
         if(theOscMessage.checkAddrPattern("/target")==true) {
           //get target frequency of glass from SC
