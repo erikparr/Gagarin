@@ -239,7 +239,7 @@ s.waitForBoot({
 			dNotesNodeID.add(noteID -> note.nodeID); // for each new note, store its nodeID in a dictionary
 			"playing mono".postln;
 		},{
-			note = Synth("stereoPlay", ["bufnum", buffers[bufferID], "bus", outbus, "dur", buffers[bufferID].duration, "fadeIn", 0.05, "fadeOut", 0.5, "amp", amp, "gate", 1]);
+			note = Synth("stereoPlay", ["bufnum", buffers[bufferID], "bus", outbus, "dur", buffers[bufferID].duration, "fadeIn", fadeIn, "fadeOut", fadeOut, "amp", amp, "gate", 1]);
 			"note id = ".post; note.nodeID.postln;
 			dNotes.add(noteID -> note);
 			dNotesNodeID.add(noteID -> note.nodeID); // for each new note, store its nodeID in a dictionary
